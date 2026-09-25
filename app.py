@@ -66,9 +66,9 @@ with col_input:
                 "ลักษณะแปลงที่ดิน (LotConfig)",
                 ["Inside (แปลงใน)", "Corner (แปลงหัวมุม)", "CulDSac (ซอยตัน)", "FR2 (ติดถนน 2 ด้าน)", "FR3 (ติดถนน 3 ด้าน)"]
             )
-            neighborhood = st.slider("ทำเล / โซนเพื่อนบ้าน (Neighborhood Code)", min_value=0, max_value=25, value=12)
+            neighborhood = st.slider("ทำเล / โซนเพื่อนบ้าน (Neighborhood Code: 0-25)", min_value=0, max_value=25, value=12)
 
-    with st.expander("2. รูปแบบโครงสร้างและหลังคา (Style & Foundation)", expanded=True):
+    with st.expander("2. โครงสร้าง สไตล์ และวัสดุ (Style & Foundation)", expanded=True):
         c3, c4 = st.columns(2)
         with c3:
             house_style = st.selectbox(
@@ -90,21 +90,46 @@ with col_input:
                 ["None (ไม่มี)", "BrkFace (ก่ออิฐโชว์แนว)", "Stone (หิน)", "BrkCmn"]
             )
 
-    with st.expander("3. โรงจอดรถและคุณภาพภายใน (Garage & Quality)", expanded=True):
+    with st.expander("3. โรงจอดรถและคุณภาพภายใน (Quality & Garage)", expanded=True):
+        qual_mapping = {
+            "ยอดเยี่ยม (Excellent)": 5.0,
+            "ดีมาก (Good)": 4.0,
+            "มาตรฐานทั่วไป (Typical/Average)": 3.0,
+            "พอใช้ (Fair)": 2.0,
+            "แย่ / ต้องปรับปรุง (Poor)": 1.0
+        }
+        
         c5, c6 = st.columns(2)
         with c5:
             garage_type = st.selectbox(
                 "ประเภทโรงจอดรถ (GarageType)",
                 ["Attchd (ติดกับตัวบ้าน)", "Detchd (แยกจากบ้าน)", "BuiltIn (ในตัวบ้าน)", "Basment", "CarPort", "NoGarage (ไม่มี)"]
             )
-            garage_finish = st.slider("สภาพการเก็บงานโรงรถ (GarageFinish: 0-3)", 0, 3, 2)
+            garage_finish_choice = st.selectbox(
+                "การตกแต่งโรงจอดรถ (Garage Finish)",
+                ["ตกแต่งสมบูรณ์ (Finished)", "ตกแต่งบางส่วน (Rough Finished)", "ยังไม่ตกแต่ง (Unfinished)", "ไม่มีโรงรถ (No Garage)"],
+                index=1
+            )
+            kitchen_choice = st.selectbox(
+                "คุณภาพห้องครัว (Kitchen Quality)",
+                options=list(qual_mapping.keys()),
+                index=2
+            )
         with c6:
-            kitchen_qual = st.slider("เกรดห้องครัว (KitchenQual: 1=แย่, 5=ดีมาก)", 1, 5, 3)
-            heating_qc = st.slider("เกรดระบบทำความร้อน (HeatingQC: 1-5)", 1, 5, 4)
-            bsmt_qual = st.slider("เกรดห้องใต้ดิน (BsmtQual: 0=ไม่มี, 1-5)", 0, 5, 3)
+            heating_choice = st.selectbox(
+                "ระบบทำความร้อน (Heating Quality)",
+                options=list(qual_mapping.keys()),
+                index=1
+            )
+            has_bsmt = st.checkbox("มีห้องใต้ดิน (Basement)", value=True)
+            bsmt_choice = st.selectbox(
+                "เกรดห้องใต้ดิน (Basement Quality)",
+                options=list(qual_mapping.keys()),
+                index=2,
+                disabled=not has_bsmt
+            )
 
-    # ปุ่ม Predict
-    btn_predict = st.button("คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
+    btn_predict = st.button("🔮 คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
 
 with col_result:
     st.subheader("📊 ผลการประเมินราคา")
@@ -113,10 +138,9 @@ with col_result:
         if model is None:
             st.error("ไม่สามารถคำนวณได้เนื่องจากโมเดลยังไม่พร้อมใช้งาน")
         else:
-            # 1. เตรียม Dictionary ค่าเริ่มต้น 51 คอลัมน์เป็น 0
             row_data = {col: 0.0 for col in FEATURE_NAMES}
             
-            # 2. แมปปิ้ง One-Hot Features
+            # One-Hot Encoding
             if "FV" in ms_zoning: row_data['MSZoning_FV'] = 1.0
             elif "RH" in ms_zoning: row_data['MSZoning_RH'] = 1.0
             elif "RL" in ms_zoning: row_data['MSZoning_RL'] = 1.0
@@ -152,7 +176,7 @@ with col_result:
             elif "None" in mas_vnr: row_data['MasVnrType_None'] = 1.0
             elif "Stone" in mas_vnr: row_data['MasVnrType_Stone'] = 1.0
 
-            # Default ExterQual One-Hot เป็น TA (Typical)
+            # Default ExterQual Dummy
             row_data['ExterQual_TA'] = 1.0
 
             found_map = {
@@ -172,88 +196,44 @@ with col_result:
                 if k in garage_type:
                     row_data[v] = 1.0
             
-            # --- ส่วน UI สำหรับรับค่าคุณภาพ (ใส่ไว้ใน col_input) ---
-            with st.expander("🛠️ ระดับคุณภาพและสภาพบ้าน (Quality Ratings)", expanded=True):
-                # แผนที่แปลงระดับคุณภาพทั่วไป (1-5)
-                qual_mapping = {
-                    "ยอดเยี่ยม (Excellent)": 5.0,
-                    "ดีมาก (Good)": 4.0,
-                    "มาตรฐานทั่วไป (Typical/Average)": 3.0,
-                    "พอใช้ (Fair)": 2.0,
-                    "แย่ / ต้องปรับปรุง (Poor)": 1.0
-                }
-                
-                kitchen_choice = st.selectbox(
-                    "คุณภาพห้องครัว (Kitchen Quality)",
-                    options=list(qual_mapping.keys()),
-                    index=2 # ค่าเริ่มต้น: Typical (3.0)
-                )
-                
-                heating_choice = st.selectbox(
-                    "ระบบทำความร้อน/ถ่ายเทอากาศ (Heating Quality)",
-                    options=list(qual_mapping.keys()),
-                    index=1 # ค่าเริ่มต้น: Good (4.0) เพราะบ้านส่วนใหญ่ในชุดข้อมูลเป็นเกรดดี
-                )
-                
-                c_bsmt, c_gar = st.columns(2)
-                with c_bsmt:
-                    has_bsmt = st.checkbox("มีห้องใต้ดิน (Basement)", value=True)
-                    bsmt_choice = st.selectbox(
-                        "เกรดห้องใต้ดิน",
-                        options=list(qual_mapping.keys()),
-                        index=2,
-                        disabled=not has_bsmt
-                    )
-                with c_gar:
-                    garage_finish_choice = st.selectbox(
-                        "การตกแต่งโรงจอดรถ (Garage Finish)",
-                        options=[
-                            "ตกแต่งสมบูรณ์ (Finished)", 
-                            "ตกแต่งบางส่วน (Rough Finished)", 
-                            "ยังไม่ตกแต่ง (Unfinished)", 
-                            "ไม่มีโรงรถ (No Garage)"
-                        ],
-                        index=1 # ค่าเริ่มต้น: Rough Finished (2.0)
-                    )
-            
-                        # --- ส่วนคำนวณ: แมปค่าเข้า row_data อย่างสมเหตุสมผล ---
-                        garage_finish_map = {
-                            "ตกแต่งสมบูรณ์ (Finished)": 3.0,
-                            "ตกแต่งบางส่วน (Rough Finished)": 2.0,
-                            "ยังไม่ตกแต่ง (Unfinished)": 1.0,
-                            "ไม่มีโรงรถ (No Garage)": 0.0
-                        }
-                        
-                        # 3. กำหนดค่าตัวแปรเชิงตัวเลข
-                        row_data['Neighborhood'] = float(neighborhood)  # รหัส 0-25
-                        row_data['Exterior1st'] = 12.0                  # Vinyl Siding (วัสดุยอดนิยมสุด)
-                        row_data['Exterior2nd'] = 13.0                  # Vinyl Siding
-                        row_data['ExterQual'] = 3.0                     # 3.0 = Typical (สอดคล้องกับบ้านส่วนใหญ่)
-                        row_data['BsmtQual'] = qual_mapping[bsmt_choice] if has_bsmt else 0.0
-                        row_data['BsmtExposure'] = 1.0                  # 1.0 = No exposure (มาตรฐาน)
-                        row_data['BsmtFinType1'] = 4.0                  # 4.0 = ALQ (Average Living Quarters)
-                        row_data['HeatingQC'] = qual_mapping[heating_choice]
-                        row_data['KitchenQual'] = qual_mapping[kitchen_choice]
-                        row_data['FireplaceQu'] = 3.0                   # 3.0 = Typical
-                        row_data['GarageFinish'] = garage_finish_map[garage_finish_choice]
+            garage_finish_map = {
+                "ตกแต่งสมบูรณ์ (Finished)": 3.0,
+                "ตกแต่งบางส่วน (Rough Finished)": 2.0,
+                "ยังไม่ตกแต่ง (Unfinished)": 1.0,
+                "ไม่มีโรงรถ (No Garage)": 0.0
+            }
 
-            # 4. แปลงเป็น DataFrame จัดเรียงลำดับคอลัมน์ให้ตรงเป๊ะ
+            # ตัวแปรเชิงตัวเลขและ Ordinal Features
+            row_data['Neighborhood'] = float(neighborhood)
+            row_data['Exterior1st'] = 12.0
+            row_data['Exterior2nd'] = 13.0
+            row_data['ExterQual'] = 3.0
+            row_data['BsmtQual'] = qual_mapping[bsmt_choice] if has_bsmt else 0.0
+            row_data['BsmtExposure'] = 1.0
+            row_data['BsmtFinType1'] = 4.0
+            row_data['HeatingQC'] = qual_mapping[heating_choice]
+            row_data['KitchenQual'] = qual_mapping[kitchen_choice]
+            row_data['FireplaceQu'] = 3.0
+            row_data['GarageFinish'] = garage_finish_map[garage_finish_choice]
+
             input_df = pd.DataFrame([row_data])[FEATURE_NAMES]
 
             try:
-                # 5. คำนวณราคาด้วย Model จริง
                 pred = model.predict(input_df)
                 price = float(pred[0])
-                
-                # หากค่าที่ได้เป็นลบหรือต่ำผิดปกติ ให้ตั้งขอบเขตล่างไว้
-                display_price = max(10000.0, price)
 
-                st.metric(
-                    label="ราคาประเมินจาก Linear Regression Model",
-                    value=f"${display_price:,.2f}"
-                )
-                
-                # แสดงค่า Intercept และข้อมูลที่ส่งเข้าโมเดล
+                if price >= 0:
+                    st.metric(
+                        label="ราคาประเมินจาก Linear Regression Model",
+                        value=f"${price:,.2f}"
+                    )
+                else:
+                    st.metric(
+                        label="ราคาประเมินจาก Linear Regression Model",
+                        value=f"-${abs(price):,.2f}"
+                    )
+                    st.warning("⚠️ ผลการคำนวณติดลบ: เนื่องจากค่าสัมประสิทธิ์ตัวแปรคุณภาพต่ำกว่าค่า Intercept แนะนำให้ปรับเกรดห้องครัว, ระบบทำความร้อน หรือโรงรถให้สูงขึ้น")
+
                 with st.expander("รายละเอียดโมเดล (Model Internals)"):
                     if hasattr(model, "intercept_"):
                         st.write(f"**Base Intercept:** `${float(model.intercept_):,.2f}`")
