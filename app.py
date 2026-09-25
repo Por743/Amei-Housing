@@ -104,7 +104,7 @@ with col_input:
             bsmt_qual = st.slider("เกรดห้องใต้ดิน (BsmtQual: 0=ไม่มี, 1-5)", 0, 5, 3)
 
     # ปุ่ม Predict
-    btn_predict = st.button("🔮 คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
+    btn_predict = st.button("คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
 
 with col_result:
     st.subheader("📊 ผลการประเมินราคา")
@@ -172,18 +172,70 @@ with col_result:
                 if k in garage_type:
                     row_data[v] = 1.0
 
-            # 3. แมปปิ้งตัวแปรเชิงตัวเลข/Ordinal
-            row_data['Neighborhood'] = float(neighborhood)
-            row_data['Exterior1st'] = 12.0
-            row_data['Exterior2nd'] = 13.0
-            row_data['ExterQual'] = 3.0
-            row_data['BsmtQual'] = float(bsmt_qual)
-            row_data['BsmtExposure'] = 1.0
-            row_data['BsmtFinType1'] = 4.0
-            row_data['HeatingQC'] = float(heating_qc)
-            row_data['KitchenQual'] = float(kitchen_qual)
-            row_data['FireplaceQu'] = 2.0
-            row_data['GarageFinish'] = float(garage_finish)
+# --- ส่วน UI สำหรับรับค่าคุณภาพ (ใส่ไว้ใน col_input) ---
+with st.expander("🛠️ ระดับคุณภาพและสภาพบ้าน (Quality Ratings)", expanded=True):
+    # แผนที่แปลงระดับคุณภาพทั่วไป (1-5)
+    qual_mapping = {
+        "ยอดเยี่ยม (Excellent)": 5.0,
+        "ดีมาก (Good)": 4.0,
+        "มาตรฐานทั่วไป (Typical/Average)": 3.0,
+        "พอใช้ (Fair)": 2.0,
+        "แย่ / ต้องปรับปรุง (Poor)": 1.0
+    }
+    
+    kitchen_choice = st.selectbox(
+        "คุณภาพห้องครัว (Kitchen Quality)",
+        options=list(qual_mapping.keys()),
+        index=2 # ค่าเริ่มต้น: Typical (3.0)
+    )
+    
+    heating_choice = st.selectbox(
+        "ระบบทำความร้อน/ถ่ายเทอากาศ (Heating Quality)",
+        options=list(qual_mapping.keys()),
+        index=1 # ค่าเริ่มต้น: Good (4.0) เพราะบ้านส่วนใหญ่ในชุดข้อมูลเป็นเกรดดี
+    )
+    
+    c_bsmt, c_gar = st.columns(2)
+    with c_bsmt:
+        has_bsmt = st.checkbox("มีห้องใต้ดิน (Basement)", value=True)
+        bsmt_choice = st.selectbox(
+            "เกรดห้องใต้ดิน",
+            options=list(qual_mapping.keys()),
+            index=2,
+            disabled=not has_bsmt
+        )
+    with c_gar:
+        garage_finish_choice = st.selectbox(
+            "การตกแต่งโรงจอดรถ (Garage Finish)",
+            options=[
+                "ตกแต่งสมบูรณ์ (Finished)", 
+                "ตกแต่งบางส่วน (Rough Finished)", 
+                "ยังไม่ตกแต่ง (Unfinished)", 
+                "ไม่มีโรงรถ (No Garage)"
+            ],
+            index=1 # ค่าเริ่มต้น: Rough Finished (2.0)
+        )
+
+            # --- ส่วนคำนวณ: แมปค่าเข้า row_data อย่างสมเหตุสมผล ---
+            garage_finish_map = {
+                "ตกแต่งสมบูรณ์ (Finished)": 3.0,
+                "ตกแต่งบางส่วน (Rough Finished)": 2.0,
+                "ยังไม่ตกแต่ง (Unfinished)": 1.0,
+                "ไม่มีโรงรถ (No Garage)": 0.0
+            }
+            
+            # 3. กำหนดค่าตัวแปรเชิงตัวเลข
+            row_data['Neighborhood'] = float(neighborhood)  # รหัส 0-25
+            row_data['Exterior1st'] = 12.0                  # Vinyl Siding (วัสดุยอดนิยมสุด)
+            row_data['Exterior2nd'] = 13.0                  # Vinyl Siding
+            row_data['ExterQual'] = 3.0                     # 3.0 = Typical (สอดคล้องกับบ้านส่วนใหญ่)
+            row_data['BsmtQual'] = qual_mapping[bsmt_choice] if has_bsmt else 0.0
+            row_data['BsmtExposure'] = 1.0                  # 1.0 = No exposure (มาตรฐาน)
+            row_data['BsmtFinType1'] = 4.0                  # 4.0 = ALQ (Average Living Quarters)
+            row_data['HeatingQC'] = qual_mapping[heating_choice]
+            row_data['KitchenQual'] = qual_mapping[kitchen_choice]
+            row_data['FireplaceQu'] = 3.0                   # 3.0 = Typical
+            row_data['GarageFinish'] = garage_finish_map[garage_finish_choice]
 
             # 4. แปลงเป็น DataFrame จัดเรียงลำดับคอลัมน์ให้ตรงเป๊ะ
             input_df = pd.DataFrame([row_data])[FEATURE_NAMES]
