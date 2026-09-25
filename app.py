@@ -175,6 +175,15 @@ with col_result:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # ข้อมูลตัวแปรที่ส่งเข้าประเมิน
-    with st.expander("🔍 ดูข้อมูลดิบที่ส่งเข้าโมเดล"):
-        st.dataframe(input_data)
+    # เปลี่ยนจากการคำนวณตลอดเวลา เป็นรอรับการคลิกปุ่ม
+if btn_predict:
+    predicted_price = calculate_price(input_data)
+    price_per_sqm = predicted_price / living_area
+
+    st.metric(
+        label="ราคาประเมินกลาง (Estimated Price)",
+        value=f"฿{predicted_price:,.0f}",
+        delta=f"฿{price_per_sqm:,.0f} / ตร.ม."
+    )
+else:
+    st.info("👈 กรุณากรอกข้อมูลทางด้านซ้าย แล้วกดปุ่ม 'คำนวณราคาประเมิน'")
