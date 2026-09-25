@@ -13,7 +13,7 @@ st.set_page_config(
 # ตั้งชื่อไฟล์โมเดลให้ตรงกับที่คุณอัปโหลด
 MODEL_PATH = "linear_regression_model1.pkl" 
 
-# รายชื่อ 76 Features เผื่อไว้กรณีโมเดลไม่ได้บันทึกชื่อคอลัมน์ไว้
+# รายชื่อ 76 Features ตามลำดับที่โมเดลต้องการ
 FEATURE_NAMES = [
     'MSSubClass', 'LotFrontage', 'LotArea', 'BsmtFinSF1', 'BsmtUnfSF', 'TotalBsmtSF', 
     '1stFlrSF', '2ndFlrSF', 'GrLivArea', 'FullBath', 'BedroomAbvGr', 'TotRmsAbvGrd', 
@@ -89,7 +89,15 @@ with col_input:
             remod_age = st.number_input("อายุหลังจากการรีโนเวท (ปี)", min_value=0, max_value=150, value=10, disabled=not is_remodeled)
         with c8:
             neighborhood = st.slider("รหัสย่านที่ตั้ง (Neighborhood: 0-25)", 0, 25, 12)
-            ms_zoning = st.selectbox("โซนผังเมือง (MSZoning)", ["ที่อยู่อาศัยหนาแน่นต่ำ (บ้านเดี่ยวทั่วไป)", "ที่อยู่อาศัยหนาแน่นปานกลาง (เช่น ทาวน์เฮาส์ ตึกแถว)", "โครงการหมู่บ้านจัดสรรริมน้ำ/สไตล์วิลเลจ", "ที่อยู่อาศัยหนาแน่นสูง (เช่น คอนโด อพาร์ตเมนต์สูง)"])
+            ms_zoning_th = st.selectbox(
+                "โซนผังเมือง (MSZoning)", 
+                [
+                    "ที่อยู่อาศัยหนาแน่นต่ำ (บ้านเดี่ยวทั่วไป)", 
+                    "ที่อยู่อาศัยหนาแน่นปานกลาง (เช่น ทาวน์เฮาส์ ตึกแถว)", 
+                    "โครงการหมู่บ้านจัดสรรริมน้ำ/สไตล์วิลเลจ", 
+                    "ที่อยู่อาศัยหนาแน่นสูง (เช่น คอนโด อพาร์ตเมนต์สูง)"
+                ]
+            )
 
     with st.expander("4. เกรดและคุณภาพวัสดุ (Quality Ratings)", expanded=True):
         qual_options = {"Excellent": 5.0, "Good": 4.0, "Typical": 3.0, "Fair": 2.0, "Poor": 1.0}
@@ -98,7 +106,7 @@ with col_input:
             kitchen_qual = st.selectbox("คุณภาพห้องครัว", list(qual_options.keys()), index=2)
             exter_qual = st.selectbox("คุณภาพวัสดุภายนอก", list(qual_options.keys()), index=2)
         with c10:
-            heating_qc = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_options.keys()), index=0) # มักจะ Ex (5)
+            heating_qc = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_options.keys()), index=0)
             bsmt_qual = st.selectbox("คุณภาพห้องใต้ดิน", list(qual_options.keys()), index=2)
 
     btn_predict = st.button("🔮 คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
@@ -118,6 +126,15 @@ with col_result:
 
             # 2. สร้างพจนานุกรมเก็บค่าเริ่มต้น 0.0 สำหรับทุกคอลัมน์ที่โมเดลต้องการ
             row_data = {col: 0.0 for col in expected_features}
+
+            # แมปตัวเลือกภาษาไทยกลับเป็นรหัสย่อของชุดข้อมูล
+            zoning_map = {
+                "ที่อยู่อาศัยหนาแน่นต่ำ (บ้านเดี่ยวทั่วไป)": "RL",
+                "ที่อยู่อาศัยหนาแน่นปานกลาง (เช่น ทาวน์เฮาส์ ตึกแถว)": "RM",
+                "โครงการหมู่บ้านจัดสรรริมน้ำ/สไตล์วิลเลจ": "FV",
+                "ที่อยู่อาศัยหนาแน่นสูง (เช่น คอนโด อพาร์ตเมนต์สูง)": "RH"
+            }
+            selected_zoning = zoning_map[ms_zoning_th]
 
             # 3. แมปตัวแปรหลักที่มีใน UI เข้ากับชื่อคอลัมน์
             value_map = {
@@ -140,7 +157,7 @@ with col_result:
                 'MSSubClass': 20.0,
                 'LotFrontage': 70.0,
                 'MoSold': 6.0,
-                f'MSZoning_{ms_zoning}': 1.0,
+                f'MSZoning_{selected_zoning}': 1.0,
                 'LotShape_Reg': 1.0,
                 'LotConfig_Inside': 1.0,
                 'HouseStyle_1Story': 1.0 if second_flr_sf == 0 else 0.0,
@@ -162,7 +179,6 @@ with col_result:
                 'BsmtFinType1': 4.0
             }
 
-            # อัปเดตเฉพาะคอลัมน์ที่ตรงกับความต้องการของโมเดล
             for feature, val in value_map.items():
                 if feature in row_data:
                     row_data[feature] = val
@@ -171,14 +187,25 @@ with col_result:
             input_df = pd.DataFrame([row_data])[expected_features]
 
             try:
-                pred = model.predict(input_df)
-                price = float(pred[0])
-
-                if price >= 0:
-                    st.metric(label="ราคาประเมิน (Estimated Price)", value=f"${price:,.2f}")
+                raw_pred = float(model.predict(input_df)[0])
+                
+                # --- จุดแปลงค่า Log กลับเป็น Dollar จริง ---
+                # หากค่า raw_pred มีค่าน้อย (ช่วง Log สเกล 5 - 25) ให้แปลงกลับด้วย expm1
+                if 0 < raw_pred < 30:
+                    real_price = np.expm1(raw_pred)
+                elif raw_pred <= 0:
+                    real_price = 0.0
                 else:
-                    st.metric(label="ราคาประเมิน (Estimated Price)", value=f"-${abs(price):,.2f}")
-                    st.warning("⚠️ ราคาคำนวณติดลบ: อาจเป็นเพราะตั้งค่าอายุบ้านสูงไป หรือพื้นที่ใช้สอยน้อยเกินไป")
+                    real_price = raw_pred
+
+                st.metric(
+                    label="ราคาประเมินจริง (Estimated Sale Price)", 
+                    value=f"${real_price:,.2f}"
+                )
+                st.caption(f"ค่าดิบที่ได้จากโมเดล (Log Scale Output): `{raw_pred:.4f}`")
+
+                if real_price <= 0:
+                    st.warning("⚠️ ผลลัพธ์ผิดปกติ: ลองปรับพื้นที่ใช้สอยให้มากขึ้น หรือลดอายุของบ้านลง")
 
                 with st.expander("ดูตาราง Features (ที่ส่งเข้าโมเดล)"):
                     st.dataframe(input_df.T, height=400)
