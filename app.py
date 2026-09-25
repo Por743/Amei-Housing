@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # --- โหลดโมเดล A ---
-MODEL_PATH = "model_a.pkl"
+MODEL_PATH = "linear_regression_model.pkl"
 
 @st.cache_resource
 def load_model():
