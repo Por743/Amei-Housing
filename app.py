@@ -13,7 +13,7 @@ st.set_page_config(
 # ตั้งชื่อไฟล์โมเดลให้ตรงกับที่คุณอัปโหลด
 MODEL_PATH = "linear_regression_model1.pkl" 
 
-# รายชื่อ 76 Features ตามลำดับที่โมเดลต้องการเป๊ะๆ
+# รายชื่อ 76 Features เผื่อไว้กรณีโมเดลไม่ได้บันทึกชื่อคอลัมน์ไว้
 FEATURE_NAMES = [
     'MSSubClass', 'LotFrontage', 'LotArea', 'BsmtFinSF1', 'BsmtUnfSF', 'TotalBsmtSF', 
     '1stFlrSF', '2ndFlrSF', 'GrLivArea', 'FullBath', 'BedroomAbvGr', 'TotRmsAbvGrd', 
@@ -39,7 +39,7 @@ def load_model():
         return None, f"ไม่พบไฟล์ '{MODEL_PATH}'"
     try:
         loaded_model = joblib.load(MODEL_PATH)
-        return loaded_model, "โหลดโมเดลสำเร็จ (76 Features)"
+        return loaded_model, "โหลดโมเดลสำเร็จ"
     except Exception as e:
         return None, f"เกิดข้อผิดพลาดในการโหลดโมเดล: {e}"
 
@@ -110,65 +110,65 @@ with col_result:
         if model is None:
             st.error("โมเดลไม่พร้อมใช้งาน กรุณาตรวจสอบไฟล์ .pkl")
         else:
-            # 1. เตรียมค่าเริ่มต้นเป็น 0 สำหรับทุก 76 คอลัมน์
-            row_data = {col: 0.0 for col in FEATURE_NAMES}
+            # 1. ดึงรายชื่อ features ที่แท้จริงจากตัวโมเดลโดยตรง
+            if hasattr(model, "feature_names_in_"):
+                expected_features = list(model.feature_names_in_)
+            else:
+                expected_features = FEATURE_NAMES
 
-            # 2. ใส่ค่าตัวแปรเชิงปริมาณ (Numeric)
-            row_data['GrLivArea'] = float(gr_liv_area)
-            row_data['LotArea'] = float(lot_area)
-            row_data['1stFlrSF'] = float(first_flr_sf)
-            row_data['2ndFlrSF'] = float(second_flr_sf)
-            row_data['TotalBsmtSF'] = float(total_bsmt_sf)
-            row_data['GarageArea'] = float(garage_area)
-            row_data['BedroomAbvGr'] = float(bedroom)
-            row_data['TotRmsAbvGrd'] = float(tot_rms)
-            row_data['FullBath'] = float(full_bath)
-            row_data['GarageCars'] = float(garage_cars)
-            row_data['HouseAge'] = float(house_age)
-            row_data['IsRemodeled'] = 1.0 if is_remodeled else 0.0
-            row_data['RemodAge'] = float(remod_age) if is_remodeled else float(house_age)
-            
-            # Binary & Binned Features
-            row_data['HalfBath_binned'] = 1.0 if half_bath else 0.0
-            row_data['Fireplaces_binned'] = 1.0 if has_fireplace else 0.0
-            row_data['WoodDeckSF_binary'] = 1.0 if has_wood_deck else 0.0
-            
-            # Default numeric ให้บ้านมีค่ากลางๆ เพื่อไม่ให้โมเดลประเมินเพี้ยน
-            row_data['MSSubClass'] = 20.0  # 1-Story
-            row_data['LotFrontage'] = 70.0
-            row_data['MoSold'] = 6.0       # เดือนมิถุนายน
-            
-            # 3. One-Hot Encoding พื้นฐาน
-            if ms_zoning == "RL": row_data['MSZoning_RL'] = 1.0
-            elif ms_zoning == "RM": row_data['MSZoning_RM'] = 1.0
-            elif ms_zoning == "FV": row_data['MSZoning_FV'] = 1.0
-            elif ms_zoning == "RH": row_data['MSZoning_RH'] = 1.0
-            
-            # Default One-Hot ที่คนใช้บ่อยที่สุดของ Ames
-            row_data['LotShape_Reg'] = 1.0
-            row_data['LotConfig_Inside'] = 1.0
-            row_data['HouseStyle_1Story'] = 1.0 if second_flr_sf == 0 else 0.0
-            row_data['HouseStyle_2Story'] = 1.0 if second_flr_sf > 0 else 0.0
-            row_data['RoofStyle_Gable'] = 1.0
-            row_data['Foundation_PConc'] = 1.0
-            row_data['GarageType_Attchd'] = 1.0
-            row_data['MasVnrType_None'] = 1.0
-            
-            # 4. Ordinal Features & Quality
-            row_data['Neighborhood'] = float(neighborhood)
-            row_data['Exterior1st'] = 12.0
-            row_data['Exterior2nd'] = 13.0
-            row_data['KitchenQual'] = qual_options[kitchen_qual]
-            row_data['ExterQual'] = qual_options[exter_qual]
-            row_data['HeatingQC'] = qual_options[heating_qc]
-            row_data['BsmtQual'] = qual_options[bsmt_qual] if total_bsmt_sf > 0 else 0.0
-            row_data['FireplaceQu'] = 3.0 if has_fireplace else 0.0
-            row_data['GarageFinish'] = 2.0 if garage_cars > 0 else 0.0
-            row_data['BsmtExposure'] = 1.0
-            row_data['BsmtFinType1'] = 4.0
+            # 2. สร้างพจนานุกรมเก็บค่าเริ่มต้น 0.0 สำหรับทุกคอลัมน์ที่โมเดลต้องการ
+            row_data = {col: 0.0 for col in expected_features}
 
-            # 5. สร้าง DataFrame ให้มีลำดับเป๊ะๆ ตาม FEATURE_NAMES
-            input_df = pd.DataFrame([row_data])[FEATURE_NAMES]
+            # 3. แมปตัวแปรหลักที่มีใน UI เข้ากับชื่อคอลัมน์
+            value_map = {
+                'GrLivArea': float(gr_liv_area),
+                'LotArea': float(lot_area),
+                '1stFlrSF': float(first_flr_sf),
+                '2ndFlrSF': float(second_flr_sf),
+                'TotalBsmtSF': float(total_bsmt_sf),
+                'GarageArea': float(garage_area),
+                'BedroomAbvGr': float(bedroom),
+                'TotRmsAbvGrd': float(tot_rms),
+                'FullBath': float(full_bath),
+                'GarageCars': float(garage_cars),
+                'HouseAge': float(house_age),
+                'RemodAge': float(remod_age) if is_remodeled else float(house_age),
+                'IsRemodeled': 1.0 if is_remodeled else 0.0,
+                'HalfBath_binned': 1.0 if half_bath else 0.0,
+                'Fireplaces_binned': 1.0 if has_fireplace else 0.0,
+                'WoodDeckSF_binary': 1.0 if has_wood_deck else 0.0,
+                'MSSubClass': 20.0,
+                'LotFrontage': 70.0,
+                'MoSold': 6.0,
+                f'MSZoning_{ms_zoning}': 1.0,
+                'LotShape_Reg': 1.0,
+                'LotConfig_Inside': 1.0,
+                'HouseStyle_1Story': 1.0 if second_flr_sf == 0 else 0.0,
+                'HouseStyle_2Story': 1.0 if second_flr_sf > 0 else 0.0,
+                'RoofStyle_Gable': 1.0,
+                'Foundation_PConc': 1.0,
+                'GarageType_Attchd': 1.0,
+                'MasVnrType_None': 1.0,
+                'Neighborhood': float(neighborhood),
+                'Exterior1st': 12.0,
+                'Exterior2nd': 13.0,
+                'KitchenQual': qual_options[kitchen_qual],
+                'ExterQual': qual_options[exter_qual],
+                'HeatingQC': qual_options[heating_qc],
+                'BsmtQual': qual_options[bsmt_qual] if total_bsmt_sf > 0 else 0.0,
+                'FireplaceQu': 3.0 if has_fireplace else 0.0,
+                'GarageFinish': 2.0 if garage_cars > 0 else 0.0,
+                'BsmtExposure': 1.0,
+                'BsmtFinType1': 4.0
+            }
+
+            # อัปเดตเฉพาะคอลัมน์ที่ตรงกับความต้องการของโมเดล
+            for feature, val in value_map.items():
+                if feature in row_data:
+                    row_data[feature] = val
+
+            # 4. แปลงเป็น DataFrame โดยใช้ลำดับคอลัมน์ของโมเดล 100%
+            input_df = pd.DataFrame([row_data])[expected_features]
 
             try:
                 pred = model.predict(input_df)
@@ -180,7 +180,7 @@ with col_result:
                     st.metric(label="ราคาประเมิน (Estimated Price)", value=f"-${abs(price):,.2f}")
                     st.warning("⚠️ ราคาคำนวณติดลบ: อาจเป็นเพราะตั้งค่าอายุบ้านสูงไป หรือพื้นที่ใช้สอยน้อยเกินไป")
 
-                with st.expander("ดูตาราง 76 Features (ที่ส่งเข้าโมเดล)"):
+                with st.expander("ดูตาราง Features (ที่ส่งเข้าโมเดล)"):
                     st.dataframe(input_df.T, height=400)
 
             except Exception as e:
