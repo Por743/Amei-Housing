@@ -12,72 +12,41 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- โหลดโมเดล A ---
+# --- โหลดโมเดลจริง ---
 MODEL_PATH = "linear_regression_model.pkl"
 
 @st.cache_resource
 def load_model():
-    if os.path.exists(MODEL_PATH):
-        try:
-            return joblib.load(MODEL_PATH), "linear_regression_model.pkl"
-        except Exception as e:
-            return None, f"Error loading model: {e}"
-    return None, "Pre-trained Model A (Built-in Hedonic Engine)"
+    if not os.path.exists(MODEL_PATH):
+        return None, f"ไม่พบไฟล์ '{MODEL_PATH}' ในโฟลเดอร์โปรเจกต์"
+    try:
+        loaded = joblib.load(MODEL_PATH)
+        return loaded, f"โหลดสำเร็จ: {MODEL_PATH}"
+    except Exception as e:
+        return None, f"เกิดข้อผิดพลาดในการโหลดโมเดล: {e}"
 
 model, model_status = load_model()
 
-# --- Custom Styling ---
-st.markdown("""
-<style>
-    .metric-card {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 16px;
-        text-align: center;
-    }
-</style>
-""", unsafe_allow_html=True)
+# ดึงชื่อคอลัมน์ที่โมเดลเคยใช้ตอนเทรน (ถ้ามี)
+expected_features = []
+if model is not None and hasattr(model, "feature_names_in_"):
+    expected_features = list(model.feature_names_in_)
 
 # --- ส่วนหัวของหน้าเว็บ ---
 st.title("🏡 House Price Prediction Platform")
-st.caption(f"โมเดลประเมินราคาอสังหาริมทรัพย์อัตโนมัติ | สถานะ: `{model_status}`")
+if model is not None:
+    st.success(f"สถานะโมเดล: `{model_status}`")
+    if expected_features:
+        st.caption(f"โมเดลต้องการ Features: `{', '.join(expected_features)}`")
+else:
+    st.error(f"สถานะโมเดล: `{model_status}`")
 
-# ฟังก์ชันคำนวณราคา
-def calculate_price(df):
-    if model is not None:
-        try:
-            return float(model.predict(df)[0])
-        except Exception:
-            pass
-    
-    # Hedonic Formula จำลองสำหรับ Model A
-    base_rate = 35000  # บาท / ตร.ม.
-    loc_mult = {
-        "CBD / ใจกลางเมือง": 2.2, 
-        "แนวรถไฟฟ้า (BTS/MRT)": 1.6, 
-        "ต่างจังหวัดหัวเมืองเศรษฐกิจ": 1.1, 
-        "ชานเมืองรอบนอก (Suburban)": 0.9
-    }
-    cond_mult = {"มาตรฐาน": 1.0, "ดี": 1.18, "พรีเมียม / ลักชัวรี": 1.45}
-    
-    sqm_price = base_rate * loc_mult[df["location"].iloc[0]] * cond_mult[df["condition"].iloc[0]]
-    total = (df["living_area"].iloc[0] * sqm_price) + (df["land_area"].iloc[0] * 25000)
-    total += (df["bedrooms"].iloc[0] * 120000) + (df["bathrooms"].iloc[0] * 90000) + (df["parking"].iloc[0] * 100000)
-    
-    depreciation = max(0.65, 1 - (df["house_age"].iloc[0] * 0.015))
-    total *= depreciation
-    if df["has_pool"].iloc[0]: total += 750000
-    if df["has_solar"].iloc[0]: total += 220000
-    return total
-
-# --- Layout: แบ่งเป็นคอลัมน์ซ้าย (Input) และขวา (Result) ---
+# --- Layout: ซ้าย (Input) และ ขวา (Result) ---
 col_input, col_result = st.columns([1, 1.2], gap="large")
 
 with col_input:
     st.subheader("📋 ระบุคุณลักษณะของบ้าน")
     
-    # ใช้ Form เพื่อป้องกันการ rerun ระหว่างกรอกข้อมูล
     with st.form("house_features_form"):
         property_type = st.selectbox(
             "ประเภทอสังหาริมทรัพย์",
@@ -118,74 +87,139 @@ with col_input:
         
         btn_predict = st.form_submit_button("🔮 คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
 
-# เมื่อกดปุ่ม ให้คำนวณและบันทึกผลลง session_state
-if btn_predict:
-    input_data = pd.DataFrame([{
-        "property_type": property_type,
-        "location": location,
+# ฟังก์ชันจัดเตรียมข้อมูลส่งเข้า Model จริง
+def prepare_input_for_model(raw_dict, model_obj):
+    df_raw = pd.DataFrame([raw_dict])
+    
+    # กรณีโมเดลบันทึก feature_names_in_ ไว้ตอนเทรน
+    if hasattr(model_obj, "feature_names_in_"):
+        req_cols = list(model_obj.feature_names_in_)
+        
+        # แมปปิ้งชื่อคอลัมน์ทั่วไปที่มักใช้ในการเทรน
+        alias_map = {
+            "area": living_area,
+            "sqm": living_area,
+            "size": living_area,
+            "living_area": living_area,
+            "land_area": land_area,
+            "land": land_area,
+            "beds": bedrooms,
+            "bedroom": bedrooms,
+            "bedrooms": bedrooms,
+            "baths": bathrooms,
+            "bathroom": bathrooms,
+            "bathrooms": bathrooms,
+            "parking": parking,
+            "garage": parking,
+            "age": house_age,
+            "house_age": house_age,
+            "pool": int(has_pool),
+            "solar": int(has_solar)
+        }
+        
+        data_to_feed = {}
+        for col in req_cols:
+            if col in raw_dict:
+                data_to_feed[col] = raw_dict[col]
+            elif col.lower() in alias_map:
+                data_to_feed[col] = alias_map[col.lower()]
+            else:
+                # ถ้าโมเดลต้องการคอลัมน์ที่ไม่รู้จัก ให้ใส่ 0 ไว้ก่อนเพื่อกัน Error
+                data_to_feed[col] = 0
+                
+        return pd.DataFrame([data_to_feed])[req_cols]
+    
+    # หากโมเดลไม่มี feature_names_in_ ให้ส่งเฉพาะตัวแปรตัวเลขหลัก
+    return pd.DataFrame([{
         "living_area": living_area,
         "land_area": land_area,
         "bedrooms": bedrooms,
         "bathrooms": bathrooms,
         "parking": parking,
-        "house_age": house_age,
-        "condition": condition,
-        "has_pool": int(has_pool),
-        "has_solar": int(has_solar)
+        "house_age": house_age
     }])
-    
-    price = calculate_price(input_data)
-    st.session_state["result"] = {
-        "price": price,
-        "living_area": living_area,
-        "land_area": land_area,
-        "bedrooms": bedrooms,
-        "bathrooms": bathrooms,
-        "parking": parking,
-        "has_pool": has_pool,
-        "has_solar": has_solar
-    }
 
-# --- ส่วนแสดงผลทางด้านขวา ---
+# เมื่อกดปุ่ม คำนวณด้วยโมเดลจริง
+if btn_predict:
+    if model is None:
+        st.session_state["error"] = "ไม่สามารถทำนายได้ เนื่องจากยังไม่ได้วางไฟล์ 'linear_regression_model.pkl'"
+    else:
+        raw_features = {
+            "property_type": property_type,
+            "location": location,
+            "living_area": living_area,
+            "land_area": land_area,
+            "bedrooms": bedrooms,
+            "bathrooms": bathrooms,
+            "parking": parking,
+            "house_age": house_age,
+            "condition": condition,
+            "has_pool": int(has_pool),
+            "has_solar": int(has_solar)
+        }
+        
+        try:
+            X_feed = prepare_input_for_model(raw_features, model)
+            # ทำนายผลจาก Model จริง
+            pred = model.predict(X_feed)
+            pred_value = float(pred[0])
+            
+            st.session_state["error"] = None
+            st.session_state["result"] = {
+                "price": pred_value,
+                "living_area": living_area,
+                "X_feed": X_feed
+            }
+        except Exception as e:
+            st.session_state["result"] = None
+            st.session_state["error"] = f"เกิดข้อผิดพลาดจากตัวโมเดล: {e}"
+
+# --- แสดงผลลัพธ์ทางด้านขวา ---
 with col_result:
-    st.subheader("📊 ผลการประเมินราคา")
+    st.subheader("📊 ผลการประเมินราคา (จาก Model จริง)")
     
-    if "result" in st.session_state:
+    if st.session_state.get("error"):
+        st.error(st.session_state["error"])
+        st.info("💡 **คำแนะนำ:** ตรวจสอบว่าตอนสร้างโมเดล ใช้คอลัมน์ตัวแปรชื่ออะไรบ้าง และต้องเป็นตัวเลขทั้งหมดหรือไม่")
+        
+    elif "result" in st.session_state and st.session_state["result"] is not None:
         res = st.session_state["result"]
         predicted_price = res["price"]
-        price_per_sqm = predicted_price / res["living_area"]
+        price_per_sqm = predicted_price / res["living_area"] if res["living_area"] > 0 else 0
 
+        # แสดงราคาจาก Model จริง
         st.metric(
-            label="ราคาประเมินกลาง (Estimated Price)",
-            value=f"฿{predicted_price:,.0f}",
-            delta=f"฿{price_per_sqm:,.0f} / ตร.ม."
+            label="ราคาประเมินจากโมเดล (Predicted Price)",
+            value=f"฿{predicted_price:,.2f}",
+            delta=f"฿{price_per_sqm:,.2f} / ตร.ม."
         )
 
-        lower_bound = predicted_price * 0.94
-        upper_bound = predicted_price * 1.06
-        st.info(f"**ช่วงราคาที่มีความเป็นไปได้สูง (Confidence Range 92%):** ฿{lower_bound:,.0f} - ฿{upper_bound:,.0f}")
+        # สัมประสิทธิ์ (Coefficients) ของ Linear Regression ถ้ามี
+        if hasattr(model, "coef_"):
+            with st.expander("📈 ดูค่าน้ำหนักสัมประสิทธิ์ของโมเดล (Model Coefficients)"):
+                coef_df = pd.DataFrame({
+                    "Feature": res["X_feed"].columns,
+                    "Coefficient (น้ำหนัก)": model.coef_ if len(model.coef_.shape) == 1 else model.coef_[0]
+                })
+                st.dataframe(coef_df, use_container_width=True)
+                
+                # กราฟแท่งแสดงอิทธิพลของแต่ละตัวแปรจากโมเดลจริง
+                fig = go.Figure(go.Bar(
+                    x=coef_df["Coefficient (น้ำหนัก)"],
+                    y=coef_df["Feature"],
+                    orientation='h',
+                    marker_color='#2563eb'
+                ))
+                fig.update_layout(
+                    title="ค่าสัมประสิทธิ์ (Weights) ของแต่ละ Feature",
+                    xaxis_title="Coefficient Value",
+                    height=260,
+                    margin=dict(l=20, r=20, t=40, b=20)
+                )
+                st.plotly_chart(fig, use_container_width=True)
 
-        # สัดส่วนโครงสร้างมูลค่า
-        breakdown_labels = ["ตัวบ้านหลัก", "ที่ดิน", "ห้อง/ฟังก์ชัน", "สิ่งอำนวยความสะดวกพิเศษ"]
-        breakdown_vals = [
-            res["living_area"] * 35000,
-            res["land_area"] * 25000,
-            (res["bedrooms"] * 120000) + (res["bathrooms"] * 90000) + (res["parking"] * 100000),
-            (750000 if res["has_pool"] else 0) + (220000 if res["has_solar"] else 0)
-        ]
-
-        fig = go.Figure(go.Bar(
-            x=breakdown_vals,
-            y=breakdown_labels,
-            orientation='h',
-            marker_color='#2563eb'
-        ))
-        fig.update_layout(
-            title="สัดส่วนโครงสร้างมูลค่าโดยประมาณ",
-            xaxis_title="มูลค่า (บาท)",
-            height=260,
-            margin=dict(l=20, r=20, t=40, b=20)
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        with st.expander("🔍 ดูตาราง Data ที่ส่งเข้า `model.predict()`"):
+            st.dataframe(res["X_feed"])
+            
     else:
-        st.info("👈 ปรับแต่งลักษณะบ้านทางด้านซ้าย แล้วกดปุ่ม **'คำนวณราคาประเมิน (Predict)'** เพื่อดูผลลัพธ์")
+        st.info("👈 ปรับแต่งลักษณะบ้านทางด้านซ้าย แล้วกดปุ่ม **'คำนวณราคาประเมิน (Predict)'** เพื่อให้โมเดลประมวลผล")
