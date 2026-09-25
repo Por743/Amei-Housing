@@ -89,7 +89,7 @@ with col_input:
             remod_age = st.number_input("อายุหลังจากการรีโนเวท (ปี)", min_value=0, max_value=150, value=10, disabled=not is_remodeled)
         with c8:
             neighborhood = st.slider("รหัสย่านที่ตั้ง (Neighborhood: 0-25)", 0, 25, 12)
-            ms_zoning = st.selectbox("โซนผังเมือง (MSZoning)", ["RL", "RM", "FV", "RH"])
+            ms_zoning = st.selectbox("โซนผังเมือง (MSZoning)", ["ที่อยู่อาศัยหนาแน่นต่ำ (บ้านเดี่ยวทั่วไป สัดส่วนเยอะที่สุดในชุดข้อมูล)", "ที่อยู่อาศัยหนาแน่นปานกลาง (เช่น ทาวน์เฮาส์ ตึกแถว)", "โครงการหมู่บ้านจัดสรรริมน้ำ/สไตล์วิลเลจ", "ที่อยู่อาศัยหนาแน่นสูง (เช่น คอนโด อพาร์ตเมนต์สูง)"])
 
     with st.expander("4. เกรดและคุณภาพวัสดุ (Quality Ratings)", expanded=True):
         qual_options = {"Excellent": 5.0, "Good": 4.0, "Typical": 3.0, "Fair": 2.0, "Poor": 1.0}
