@@ -3,223 +3,212 @@ import pandas as pd
 import numpy as np
 import os
 import joblib
-import plotly.graph_objects as go
 
-# --- กำหนดค่าหน้าเว็บ ---
 st.set_page_config(
-    page_title="House Price Valuation - Model A",
+    page_title="House Price Valuation (Linear Regression)",
     page_icon="🏡",
     layout="wide"
 )
 
-# --- โหลดโมเดลจริง ---
 MODEL_PATH = "linear_regression_model.pkl"
+
+# รายชื่อ 51 Features ตามลำดับที่โมเดลต้องการ
+FEATURE_NAMES = [
+    'MSZoning_FV', 'MSZoning_RH', 'MSZoning_RL', 'MSZoning_RM',
+    'LotShape_IR2', 'LotShape_IR3', 'LotShape_Reg',
+    'LotConfig_CulDSac', 'LotConfig_FR2', 'LotConfig_FR3', 'LotConfig_Inside',
+    'HouseStyle_1.5Unf', 'HouseStyle_1Story', 'HouseStyle_2.5Fin', 'HouseStyle_2.5Unf', 'HouseStyle_2Story', 'HouseStyle_SFoyer', 'HouseStyle_SLvl',
+    'RoofStyle_Gable', 'RoofStyle_Gambrel', 'RoofStyle_Hip', 'RoofStyle_Mansard', 'RoofStyle_Shed',
+    'MasVnrType_BrkFace', 'MasVnrType_None', 'MasVnrType_Stone',
+    'ExterQual_Fa', 'ExterQual_Gd', 'ExterQual_TA',
+    'Foundation_CBlock', 'Foundation_PConc', 'Foundation_Slab', 'Foundation_Stone', 'Foundation_Wood',
+    'GarageType_Attchd', 'GarageType_Basment', 'GarageType_BuiltIn', 'GarageType_CarPort', 'GarageType_Detchd', 'GarageType_NoGarage',
+    'Neighborhood', 'Exterior1st', 'Exterior2nd', 'ExterQual', 'BsmtQual',
+    'BsmtExposure', 'BsmtFinType1', 'HeatingQC', 'KitchenQual', 'FireplaceQu', 'GarageFinish'
+]
 
 @st.cache_resource
 def load_model():
     if not os.path.exists(MODEL_PATH):
-        return None, f"ไม่พบไฟล์ '{MODEL_PATH}' ในโฟลเดอร์โปรเจกต์"
+        return None, f"ไม่พบไฟล์ '{MODEL_PATH}' ในโฟลเดอร์เดียวกันกับ app.py"
     try:
-        loaded = joblib.load(MODEL_PATH)
-        return loaded, f"โหลดสำเร็จ: {MODEL_PATH}"
+        loaded_model = joblib.load(MODEL_PATH)
+        return loaded_model, "โหลดโมเดลสำเร็จ"
     except Exception as e:
         return None, f"เกิดข้อผิดพลาดในการโหลดโมเดล: {e}"
 
 model, model_status = load_model()
 
-# ดึงชื่อคอลัมน์ที่โมเดลเคยใช้ตอนเทรน (ถ้ามี)
-expected_features = []
-if model is not None and hasattr(model, "feature_names_in_"):
-    expected_features = list(model.feature_names_in_)
-
-# --- ส่วนหัวของหน้าเว็บ ---
 st.title("🏡 House Price Prediction Platform")
 if model is not None:
-    st.success(f"สถานะโมเดล: `{model_status}`")
-    if expected_features:
-        st.caption(f"โมเดลต้องการ Features: `{', '.join(expected_features)}`")
+    st.success(f"สถานะโมเดล: `{model_status}` (พร้อมใช้งาน 51 Features)")
 else:
     st.error(f"สถานะโมเดล: `{model_status}`")
 
-# --- Layout: ซ้าย (Input) และ ขวา (Result) ---
-col_input, col_result = st.columns([1, 1.2], gap="large")
+col_input, col_result = st.columns([1.1, 0.9], gap="large")
 
 with col_input:
     st.subheader("📋 ระบุคุณลักษณะของบ้าน")
     
-    with st.form("house_features_form"):
-        property_type = st.selectbox(
-            "ประเภทอสังหาริมทรัพย์",
-            ["บ้านเดี่ยว (Single-Family)", "ทาวน์โฮม (Townhome)", "บ้านแฝด (Semi-Detached)", "คอนโดมิเนียม (Condo)"]
-        )
-        
-        location = st.selectbox(
-            "ทำเลที่ตั้ง",
-            ["CBD / ใจกลางเมือง", "แนวรถไฟฟ้า (BTS/MRT)", "ชานเมืองรอบนอก (Suburban)", "ต่างจังหวัดหัวเมืองเศรษฐกิจ"]
-        )
-        
+    with st.expander("1. โซนและทำเล (Zoning & Lot Configuration)", expanded=True):
         c1, c2 = st.columns(2)
         with c1:
-            living_area = st.number_input("พื้นที่ใช้สอย (ตร.ม.)", min_value=20, max_value=2000, value=160, step=10)
-        with c2:
-            land_area = st.number_input("ขนาดที่ดิน (ตร.ว.)", min_value=0, max_value=500, value=50, step=5)
-        
-        c3, c4, c5 = st.columns(3)
-        with c3:
-            bedrooms = st.slider("ห้องนอน", 1, 8, 3)
-        with c4:
-            bathrooms = st.slider("ห้องน้ำ", 1, 6, 2)
-        with c5:
-            parking = st.slider("ที่จอดรถ", 0, 6, 2)
-            
-        c6, c7 = st.columns(2)
-        with c6:
-            house_age = st.number_input("อายุของบ้าน (ปี)", min_value=0, max_value=50, value=2)
-        with c7:
-            condition = st.select_slider(
-                "เกรดวัสดุและสภาพบ้าน",
-                options=["มาตรฐาน", "ดี", "พรีเมียม / ลักชัวรี"],
-                value="ดี"
+            ms_zoning = st.selectbox(
+                "โซนผังเมือง (MSZoning)",
+                ["RL (Low Density)", "RM (Medium Density)", "FV (Floating Village)", "RH (High Density)"]
             )
-        
-        has_pool = st.checkbox("🏊 สระว่ายน้ำส่วนตัว")
-        has_solar = st.checkbox("☀️ ระบบ Solar Roof")
-        
-        btn_predict = st.form_submit_button("🔮 คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
+            lot_shape = st.selectbox(
+                "รูปทรงที่ดิน (LotShape)",
+                ["Reg (สี่เหลี่ยมปกติ)", "IR1 (ไม่ปกติเล็กน้อย)", "IR2 (ค่อนข้างเบี้ยว)", "IR3 (ไม่ปกติมาก)"]
+            )
+        with c2:
+            lot_config = st.selectbox(
+                "ลักษณะแปลงที่ดิน (LotConfig)",
+                ["Inside (แปลงใน)", "Corner (แปลงหัวมุม)", "CulDSac (ซอยตัน)", "FR2 (ติดถนน 2 ด้าน)", "FR3 (ติดถนน 3 ด้าน)"]
+            )
+            neighborhood = st.slider("ทำเล / โซนเพื่อนบ้าน (Neighborhood Code)", min_value=0, max_value=25, value=12)
 
-# ฟังก์ชันจัดเตรียมข้อมูลส่งเข้า Model จริง
-def prepare_input_for_model(raw_dict, model_obj):
-    df_raw = pd.DataFrame([raw_dict])
-    
-    # กรณีโมเดลบันทึก feature_names_in_ ไว้ตอนเทรน
-    if hasattr(model_obj, "feature_names_in_"):
-        req_cols = list(model_obj.feature_names_in_)
-        
-        # แมปปิ้งชื่อคอลัมน์ทั่วไปที่มักใช้ในการเทรน
-        alias_map = {
-            "area": living_area,
-            "sqm": living_area,
-            "size": living_area,
-            "living_area": living_area,
-            "land_area": land_area,
-            "land": land_area,
-            "beds": bedrooms,
-            "bedroom": bedrooms,
-            "bedrooms": bedrooms,
-            "baths": bathrooms,
-            "bathroom": bathrooms,
-            "bathrooms": bathrooms,
-            "parking": parking,
-            "garage": parking,
-            "age": house_age,
-            "house_age": house_age,
-            "pool": int(has_pool),
-            "solar": int(has_solar)
-        }
-        
-        data_to_feed = {}
-        for col in req_cols:
-            if col in raw_dict:
-                data_to_feed[col] = raw_dict[col]
-            elif col.lower() in alias_map:
-                data_to_feed[col] = alias_map[col.lower()]
-            else:
-                # ถ้าโมเดลต้องการคอลัมน์ที่ไม่รู้จัก ให้ใส่ 0 ไว้ก่อนเพื่อกัน Error
-                data_to_feed[col] = 0
-                
-        return pd.DataFrame([data_to_feed])[req_cols]
-    
-    # หากโมเดลไม่มี feature_names_in_ ให้ส่งเฉพาะตัวแปรตัวเลขหลัก
-    return pd.DataFrame([{
-        "living_area": living_area,
-        "land_area": land_area,
-        "bedrooms": bedrooms,
-        "bathrooms": bathrooms,
-        "parking": parking,
-        "house_age": house_age
-    }])
+    with st.expander("2. รูปแบบโครงสร้างและหลังคา (Style & Foundation)", expanded=True):
+        c3, c4 = st.columns(2)
+        with c3:
+            house_style = st.selectbox(
+                "สไตล์ตัวบ้าน (HouseStyle)",
+                ["1Story (ชั้นเดียว)", "2Story (2 ชั้น)", "1.5Fin (ชั้นครึ่งเสร็จ)", "1.5Unf (ชั้นครึ่งไม่เสร็จ)", 
+                 "2.5Fin", "2.5Unf", "SFoyer", "SLvl (เล่นระดับ)"]
+            )
+            roof_style = st.selectbox(
+                "ทรงหลังคา (RoofStyle)",
+                ["Gable (จั่ว)", "Hip (ปั้นหยา)", "Gambrel", "Mansard", "Flat", "Shed"]
+            )
+        with c4:
+            foundation = st.selectbox(
+                "โครงสร้างฐานราก (Foundation)",
+                ["PConc (คอนกรีตเท)", "CBlock (คอนกรีตบล็อก)", "BrkTil (อิฐ)", "Slab", "Stone", "Wood"]
+            )
+            mas_vnr = st.selectbox(
+                "การตกแต่งผนังภายนอก (Masonry Veneer)",
+                ["None (ไม่มี)", "BrkFace (ก่ออิฐโชว์แนว)", "Stone (หิน)", "BrkCmn"]
+            )
 
-# เมื่อกดปุ่ม คำนวณด้วยโมเดลจริง
-if btn_predict:
-    if model is None:
-        st.session_state["error"] = "ไม่สามารถทำนายได้ เนื่องจากยังไม่ได้วางไฟล์ 'linear_regression_model.pkl'"
-    else:
-        raw_features = {
-            "property_type": property_type,
-            "location": location,
-            "living_area": living_area,
-            "land_area": land_area,
-            "bedrooms": bedrooms,
-            "bathrooms": bathrooms,
-            "parking": parking,
-            "house_age": house_age,
-            "condition": condition,
-            "has_pool": int(has_pool),
-            "has_solar": int(has_solar)
-        }
-        
-        try:
-            X_feed = prepare_input_for_model(raw_features, model)
-            # ทำนายผลจาก Model จริง
-            pred = model.predict(X_feed)
-            pred_value = float(pred[0])
-            
-            st.session_state["error"] = None
-            st.session_state["result"] = {
-                "price": pred_value,
-                "living_area": living_area,
-                "X_feed": X_feed
-            }
-        except Exception as e:
-            st.session_state["result"] = None
-            st.session_state["error"] = f"เกิดข้อผิดพลาดจากตัวโมเดล: {e}"
+    with st.expander("3. โรงจอดรถและคุณภาพภายใน (Garage & Quality)", expanded=True):
+        c5, c6 = st.columns(2)
+        with c5:
+            garage_type = st.selectbox(
+                "ประเภทโรงจอดรถ (GarageType)",
+                ["Attchd (ติดกับตัวบ้าน)", "Detchd (แยกจากบ้าน)", "BuiltIn (ในตัวบ้าน)", "Basment", "CarPort", "NoGarage (ไม่มี)"]
+            )
+            garage_finish = st.slider("สภาพการเก็บงานโรงรถ (GarageFinish: 0-3)", 0, 3, 2)
+        with c6:
+            kitchen_qual = st.slider("เกรดห้องครัว (KitchenQual: 1=แย่, 5=ดีมาก)", 1, 5, 3)
+            heating_qc = st.slider("เกรดระบบทำความร้อน (HeatingQC: 1-5)", 1, 5, 4)
+            bsmt_qual = st.slider("เกรดห้องใต้ดิน (BsmtQual: 0=ไม่มี, 1-5)", 0, 5, 3)
 
-# --- แสดงผลลัพธ์ทางด้านขวา ---
+    # ปุ่ม Predict
+    btn_predict = st.button("🔮 คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
+
 with col_result:
-    st.subheader("📊 ผลการประเมินราคา (จาก Model จริง)")
+    st.subheader("📊 ผลการประเมินราคา")
     
-    if st.session_state.get("error"):
-        st.error(st.session_state["error"])
-        st.info("💡 **คำแนะนำ:** ตรวจสอบว่าตอนสร้างโมเดล ใช้คอลัมน์ตัวแปรชื่ออะไรบ้าง และต้องเป็นตัวเลขทั้งหมดหรือไม่")
-        
-    elif "result" in st.session_state and st.session_state["result"] is not None:
-        res = st.session_state["result"]
-        predicted_price = res["price"]
-        price_per_sqm = predicted_price / res["living_area"] if res["living_area"] > 0 else 0
-
-        # แสดงราคาจาก Model จริง
-        st.metric(
-            label="ราคาประเมินจากโมเดล (Predicted Price)",
-            value=f"฿{predicted_price:,.2f}",
-            delta=f"฿{price_per_sqm:,.2f} / ตร.ม."
-        )
-
-        # สัมประสิทธิ์ (Coefficients) ของ Linear Regression ถ้ามี
-        if hasattr(model, "coef_"):
-            with st.expander("📈 ดูค่าน้ำหนักสัมประสิทธิ์ของโมเดล (Model Coefficients)"):
-                coef_df = pd.DataFrame({
-                    "Feature": res["X_feed"].columns,
-                    "Coefficient (น้ำหนัก)": model.coef_ if len(model.coef_.shape) == 1 else model.coef_[0]
-                })
-                st.dataframe(coef_df, use_container_width=True)
-                
-                # กราฟแท่งแสดงอิทธิพลของแต่ละตัวแปรจากโมเดลจริง
-                fig = go.Figure(go.Bar(
-                    x=coef_df["Coefficient (น้ำหนัก)"],
-                    y=coef_df["Feature"],
-                    orientation='h',
-                    marker_color='#2563eb'
-                ))
-                fig.update_layout(
-                    title="ค่าสัมประสิทธิ์ (Weights) ของแต่ละ Feature",
-                    xaxis_title="Coefficient Value",
-                    height=260,
-                    margin=dict(l=20, r=20, t=40, b=20)
-                )
-                st.plotly_chart(fig, use_container_width=True)
-
-        with st.expander("🔍 ดูตาราง Data ที่ส่งเข้า `model.predict()`"):
-            st.dataframe(res["X_feed"])
+    if btn_predict:
+        if model is None:
+            st.error("ไม่สามารถคำนวณได้เนื่องจากโมเดลยังไม่พร้อมใช้งาน")
+        else:
+            # 1. เตรียม Dictionary ค่าเริ่มต้น 51 คอลัมน์เป็น 0
+            row_data = {col: 0.0 for col in FEATURE_NAMES}
             
+            # 2. แมปปิ้ง One-Hot Features
+            if "FV" in ms_zoning: row_data['MSZoning_FV'] = 1.0
+            elif "RH" in ms_zoning: row_data['MSZoning_RH'] = 1.0
+            elif "RL" in ms_zoning: row_data['MSZoning_RL'] = 1.0
+            elif "RM" in ms_zoning: row_data['MSZoning_RM'] = 1.0
+
+            if "IR2" in lot_shape: row_data['LotShape_IR2'] = 1.0
+            elif "IR3" in lot_shape: row_data['LotShape_IR3'] = 1.0
+            elif "Reg" in lot_shape: row_data['LotShape_Reg'] = 1.0
+
+            if "CulDSac" in lot_config: row_data['LotConfig_CulDSac'] = 1.0
+            elif "FR2" in lot_config: row_data['LotConfig_FR2'] = 1.0
+            elif "FR3" in lot_config: row_data['LotConfig_FR3'] = 1.0
+            elif "Inside" in lot_config: row_data['LotConfig_Inside'] = 1.0
+
+            style_map = {
+                "1.5Unf": 'HouseStyle_1.5Unf', "1Story": 'HouseStyle_1Story',
+                "2.5Fin": 'HouseStyle_2.5Fin', "2.5Unf": 'HouseStyle_2.5Unf',
+                "2Story": 'HouseStyle_2Story', "SFoyer": 'HouseStyle_SFoyer', "SLvl": 'HouseStyle_SLvl'
+            }
+            for k, v in style_map.items():
+                if k in house_style:
+                    row_data[v] = 1.0
+
+            roof_map = {
+                "Gable": 'RoofStyle_Gable', "Gambrel": 'RoofStyle_Gambrel',
+                "Hip": 'RoofStyle_Hip', "Mansard": 'RoofStyle_Mansard', "Shed": 'RoofStyle_Shed'
+            }
+            for k, v in roof_map.items():
+                if k in roof_style:
+                    row_data[v] = 1.0
+
+            if "BrkFace" in mas_vnr: row_data['MasVnrType_BrkFace'] = 1.0
+            elif "None" in mas_vnr: row_data['MasVnrType_None'] = 1.0
+            elif "Stone" in mas_vnr: row_data['MasVnrType_Stone'] = 1.0
+
+            # Default ExterQual One-Hot เป็น TA (Typical)
+            row_data['ExterQual_TA'] = 1.0
+
+            found_map = {
+                "CBlock": 'Foundation_CBlock', "PConc": 'Foundation_PConc',
+                "Slab": 'Foundation_Slab', "Stone": 'Foundation_Stone', "Wood": 'Foundation_Wood'
+            }
+            for k, v in found_map.items():
+                if k in foundation:
+                    row_data[v] = 1.0
+
+            garage_map = {
+                "Attchd": 'GarageType_Attchd', "Basment": 'GarageType_Basment',
+                "BuiltIn": 'GarageType_BuiltIn', "CarPort": 'GarageType_CarPort',
+                "Detchd": 'GarageType_Detchd', "NoGarage": 'GarageType_NoGarage'
+            }
+            for k, v in garage_map.items():
+                if k in garage_type:
+                    row_data[v] = 1.0
+
+            # 3. แมปปิ้งตัวแปรเชิงตัวเลข/Ordinal
+            row_data['Neighborhood'] = float(neighborhood)
+            row_data['Exterior1st'] = 12.0
+            row_data['Exterior2nd'] = 13.0
+            row_data['ExterQual'] = 3.0
+            row_data['BsmtQual'] = float(bsmt_qual)
+            row_data['BsmtExposure'] = 1.0
+            row_data['BsmtFinType1'] = 4.0
+            row_data['HeatingQC'] = float(heating_qc)
+            row_data['KitchenQual'] = float(kitchen_qual)
+            row_data['FireplaceQu'] = 2.0
+            row_data['GarageFinish'] = float(garage_finish)
+
+            # 4. แปลงเป็น DataFrame จัดเรียงลำดับคอลัมน์ให้ตรงเป๊ะ
+            input_df = pd.DataFrame([row_data])[FEATURE_NAMES]
+
+            try:
+                # 5. คำนวณราคาด้วย Model จริง
+                pred = model.predict(input_df)
+                price = float(pred[0])
+                
+                # หากค่าที่ได้เป็นลบหรือต่ำผิดปกติ ให้ตั้งขอบเขตล่างไว้
+                display_price = max(10000.0, price)
+
+                st.metric(
+                    label="ราคาประเมินจาก Linear Regression Model",
+                    value=f"${display_price:,.2f}"
+                )
+                
+                # แสดงค่า Intercept และข้อมูลที่ส่งเข้าโมเดล
+                with st.expander("รายละเอียดโมเดล (Model Internals)"):
+                    if hasattr(model, "intercept_"):
+                        st.write(f"**Base Intercept:** `${float(model.intercept_):,.2f}`")
+                    st.write("**ตาราง Feature Vector (51 Features) ที่ส่งเข้าโมเดล:**")
+                    st.dataframe(input_df)
+
+            except Exception as e:
+                st.error(f"เกิดข้อผิดพลาดในการ Predict: {e}")
     else:
-        st.info("👈 ปรับแต่งลักษณะบ้านทางด้านซ้าย แล้วกดปุ่ม **'คำนวณราคาประเมิน (Predict)'** เพื่อให้โมเดลประมวลผล")
+        st.info("👈 ปรับแต่งตัวแปรทางด้านซ้าย แล้วกดปุ่ม **'คำนวณราคาประเมิน (Predict)'** เพื่อให้โมเดลเริ่มทำงาน")
