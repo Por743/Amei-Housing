@@ -19,7 +19,7 @@ MODEL_PATH = "model_a.pkl"
 def load_model():
     if os.path.exists(MODEL_PATH):
         try:
-            return joblib.load(MODEL_PATH), "model_a.pkl"
+            return joblib.load(MODEL_PATH), "linear_regression_model.pkl"
         except Exception as e:
             return None, f"Error loading model: {e}"
     return None, "Pre-trained Model A (Built-in Hedonic Engine)"
