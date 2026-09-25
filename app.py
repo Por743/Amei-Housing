@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # ตั้งชื่อไฟล์โมเดลให้ตรงกับที่คุณอัปโหลด
-MODEL_PATH = "linear_regression_model.pkl" 
+MODEL_PATH = "linear_regression_model1.pkl" 
 
 # รายชื่อ 76 Features ตามลำดับที่โมเดลต้องการเป๊ะๆ
 FEATURE_NAMES = [
