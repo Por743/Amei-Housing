@@ -296,6 +296,7 @@ with col_result:
             selected_foundation_code = foundation_map[foundation_th]
             selected_garage_code = garage_type_map[garage_type_th]
             selected_mas_vnr_code = mas_vnr_map[mas_vnr_th]
+            
             value_map = {
                 'GrLivArea': float(gr_liv_area),
                 'LotArea': float(lot_area),
@@ -316,12 +317,13 @@ with col_result:
                 'MSSubClass': MSSUBCLASS_MAP[selected_subclass],
                 'LotFrontage': float(lot_frontage),
                 f'MSZoning_{selected_zoning}': 1.0,
-                f'LotShape_{selected_shape_code}': 1.0,  # แก้ไขบั๊กใช้ชื่อย่อตรงนี้
+                f'LotShape_{selected_shape_code}': 1.0,  
                 'LotConfig_Inside': 1.0,
                 f'RoofStyle_{selected_roof_code}': 1.0,
                 f'Foundation_{selected_foundation_code}': 1.0,
                 f'GarageType_{selected_garage_code}': 1.0,
                 f'MasVnrType_{selected_mas_vnr_code}': 1.0,
+                'MasVnrArea_binary': 0.0 if selected_mas_vnr_code == 'None' else 1.0,
                 'Neighborhood': NEIGHBORHOOD_MAP[selected_neighborhood],
                 'Exterior1st': EXTERIOR1ST_MAP[selected_ext1],
                 'Exterior2nd': EXTERIOR2ND_MAP[selected_ext2],
