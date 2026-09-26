@@ -143,8 +143,9 @@ with col_input:
                                         options=list(EXTERIOR2ND_MAP.keys())
                                         )
             
-            exter_qual = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_options.keys()), index=0)
+            
         with c10:
+            exter_qual = st.selectbox("คุณภาพวัสดุ", list(qual_options.keys()), index=0)
             heating_qc = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_options.keys()), index=0)
             bsmt_qual = st.selectbox("คุณภาพห้องใต้ดิน", list(qual_options.keys()), index=2)
 
