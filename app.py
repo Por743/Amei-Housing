@@ -138,19 +138,19 @@ with col_input:
         qual_options = {"Excellent": 5.0, "Good": 4.0, "Typical": 3.0, "Fair": 2.0, "Poor": 1.0}
         c9, c10 = st.columns(2)
         with c9:
-            kitchen_qual = st.selectbox("คุณภาพห้องครัว", list(qual_options.keys()), index=2)
             selected_ext1 = st.selectbox(
                                         "วัสดุภายนอก (Exterior 1st)",
-                                        options=list(EXTERIOR1ST_MAP.keys())
+                                        options=list(EXTERIOR1ST_MAP.keys()), index=18
                                         )
             selected_ext2 = st.selectbox(
                                         "วัสดุภายนอก(หากมีหลายวัสดุ) (Exterior 2nd)",
-                                        options=list(EXTERIOR2ND_MAP.keys())
+                                        options=list(EXTERIOR2ND_MAP.keys()), index=18
                                         )
-            
+            exter_qual = st.selectbox("คุณภาพวัสดุ", list(qual_options.keys()), index=2)
+
         with c10:
-            exter_qual = st.selectbox("คุณภาพวัสดุ", list(qual_options.keys()), index=0)
-            heating_qc = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_options.keys()), index=0)
+            kitchen_qual = st.selectbox("คุณภาพห้องครัว", list(qual_options.keys()), index=2)
+            heating_qc = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_options.keys()), index=2)
             bsmt_qual = st.selectbox("คุณภาพห้องใต้ดิน", list(qual_options.keys()), index=2)
 
     btn_predict = st.button("🔮 คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
