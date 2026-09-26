@@ -119,7 +119,7 @@ with col_input:
             lot_area = st.number_input("ขนาดที่ดิน (ตารางฟุต - LotArea)", min_value=1000, max_value=50000, value=10000, step=100)
             lot_frontage = st.number_input("ความกว้างหน้าที่ดินติดถนน (ฟุต - LotFrontage)", min_value=10, max_value=400, value=70, step=5)
             lot_shape = st.selectbox("รูปทรงของแปลงที่ดิน (Lot Shape)",
-                                         options=list(shape_map.keys()), index=1
+                                         options=list(shape_map.keys()), index=0
                                         )
             selected_subclass = st.selectbox("ประเภทของบ้าน", options=list(MSSUBCLASS_MAP.keys()))
         with c2:
