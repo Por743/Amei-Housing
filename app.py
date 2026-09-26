@@ -265,7 +265,7 @@ with col_input:
                 disabled=not has_bsmt
             )
             
-btn_predict = st.button("🔮 คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
+    btn_predict = st.button("🔮 คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
 
 with col_result:
     st.subheader("📊 ผลการประเมินราคา")
