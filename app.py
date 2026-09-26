@@ -77,6 +77,11 @@ MSSUBCLASS_MAP = {'1-STORY 1946 & NEWER': np.float64(12.064447214828162),
                   '2-STORY PUD - 1946 & NEWER': np.float64(11.810688677393426), 
                   'PUD MULTILEVEL INCL SPLIT LEV/FOYER': np.float64(11.745116592703285),
                   '2 FAMILY CONVERSION': np.float64(11.73539691300343)}
+shape_map = {
+    "ที่ดินรูปทรงสี่เหลี่ยมปกติ (Regular)": "Reg",
+    "ที่ดินรูปทรงเบี้ยว (Moderately Irregular)": "IR2",
+    "ที่ดินรูปทรงอิสระ (Irregular - IR3)": "IR3"
+}
 
 # กำหนดค่าเริ่มต้นให้กับ session_state เพื่อป้องกันข้อมูลหายเมื่อมีการ rerun
 if "predicted_price" not in st.session_state:
@@ -113,6 +118,9 @@ with col_input:
             gr_liv_area = st.number_input("พื้นที่ใช้สอยรวม (ตารางฟุต - GrLivArea)", min_value=300, max_value=10000, value=1500, step=50)
             lot_area = st.number_input("ขนาดที่ดิน (ตารางฟุต - LotArea)", min_value=1000, max_value=50000, value=10000, step=100)
             lot_frontage = st.number_input("ความกว้างหน้าที่ดินติดถนน (ฟุต - LotFrontage)", min_value=10, max_value=400, value=70, step=5)
+            lot_shape = st.selectbox("รูปทรงของแปลงที่ดิน (Lot Shape)",
+                                         options=list(shape_map.keys()), index=1
+                                        )
             selected_subclass = st.selectbox("ประเภทของบ้าน", options=list(MSSUBCLASS_MAP.keys()))
         with c2:
             first_flr_sf = st.number_input("พื้นที่ชั้น 1 (1stFlrSF)", min_value=300, max_value=5000, value=1000, step=50)
@@ -213,7 +221,7 @@ with col_result:
                 'MSSubClass': MSSUBCLASS_MAP[selected_subclass],
                 'LotFrontage': float(lot_frontage),
                 f'MSZoning_{selected_zoning}': 1.0,
-                'LotShape_Reg': 1.0,
+                f'LotShape_{lot_shape}': 1.0,
                 'LotConfig_Inside': 1.0,
                 'HouseStyle_1Story': 1.0 if second_flr_sf == 0 else 0.0,
                 'HouseStyle_2Story': 1.0 if second_flr_sf > 0 else 0.0,
