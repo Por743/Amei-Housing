@@ -88,7 +88,7 @@ with col_input:
             is_remodeled = st.checkbox("เคยได้รับการรีโนเวท (IsRemodeled)", value=True)
             remod_age = st.number_input("อายุหลังจากการรีโนเวท (ปี)", min_value=0, max_value=150, value=10, disabled=not is_remodeled)
         with c8:
-            neighborhood = st.slider("รหัสย่านที่ตั้ง (Neighborhood: 0-25)", 0, 25, 12)
+            selected_neighborhood = st.selectbox("ย่านที่ตั้งของบ้าน (Neighborhood)", options=list(NEIGHBORHOOD_MAP.keys()))
             ms_zoning_th = st.selectbox(
                 "โซนผังเมือง (MSZoning)", 
                 [
@@ -135,6 +135,32 @@ with col_result:
                 "ที่อยู่อาศัยหนาแน่นสูง (เช่น คอนโด อพาร์ตเมนต์สูง)": "RH"
             }
             selected_zoning = zoning_map[ms_zoning_th]
+            NEIGHBORHOOD_MAP = {'CollgCr': np.float64(12.169332259956139), 
+             'Veenker': np.float64(12.266186946338435), 
+             'Crawfor': np.float64(12.237256187249674), 
+             'NoRidge': np.float64(12.596944834295265),
+             'Mitchel': np.float64(11.967956343260019), 
+             'Somerst': np.float64(12.29107485188606), 
+             'NWAmes': np.float64(12.137222248623926), 
+             'OldTown': np.float64(11.73049818713178), 
+             'BrkSide': np.float64(11.668680867662754), 
+             'Sawyer': np.float64(11.805959895258422), 
+             'NridgHt': np.float64(12.589057073179353), 
+             'NAmes': np.float64(11.877717162561297), 
+             'SawyerW': np.float64(12.040539413569535), 
+             'IDOTRR': np.float64(11.563381912602678), 
+             'MeadowV': np.float64(11.557207645181311), 
+             'Edwards': np.float64(11.745846688038602), 
+             'Timber': np.float64(12.32619253054482), 
+             'Gilbert': np.float64(12.171106002634197), 
+             'StoneBr': np.float64(12.524199680812767), 
+             'ClearCr': np.float64(12.279718567435713),
+             'NPkVill': np.float64(11.884201006921435), 
+             'Blmngtn': np.float64(12.14777689419568),
+             'BrDale': np.float64(11.540679043361267),
+             'SWISU': np.float64(11.874302215307473), 
+             'Blueste': np.float64(12.029983731526684)}
+
 
             # 3. แมปตัวแปรหลักที่มีใน UI เข้ากับชื่อคอลัมน์
             value_map = {
@@ -166,7 +192,7 @@ with col_result:
                 'Foundation_PConc': 1.0,
                 'GarageType_Attchd': 1.0,
                 'MasVnrType_None': 1.0,
-                'Neighborhood': float(neighborhood),
+                'Neighborhood': NEIGHBORHOOD_MAP[selected_neighborhood],
                 'Exterior1st': 12.0,
                 'Exterior2nd': 13.0,
                 'KitchenQual': qual_options[kitchen_qual],
@@ -178,7 +204,7 @@ with col_result:
                 'BsmtExposure': 1.0,
                 'BsmtFinType1': 4.0
             }
-
+                
             for feature, val in value_map.items():
                 if feature in row_data:
                     row_data[feature] = val
