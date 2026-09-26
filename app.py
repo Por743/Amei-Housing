@@ -213,7 +213,7 @@ with col_input:
             garage_type_th = st.selectbox(
                 "ประเภทโรงจอดรถ (Garage Type)", 
                 options=list(garage_type_map.keys()), 
-                index=0 if garage_cars > 0 else 5
+                index=0 if garage_cars > 0 else 5)
             has_fireplace = st.checkbox("มีเตาผิง (Fireplace)")
             has_wood_deck = st.checkbox("มีระเบียงไม้ (WoodDeck)")
 
