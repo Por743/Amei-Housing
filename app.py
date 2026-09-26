@@ -334,7 +334,7 @@ with col_result:
                 'FireplaceQu': 3.0 if has_fireplace else 0.0,
                 'GarageFinish': 2.0 if garage_cars > 0 else 0.0,
                 'BsmtExposure': bsmt_exposure_options[bsmt_exposure_th] if total_bsmt_sf > 0 else 0.0,
-                'BsmtFinType1': bsmt_fintype_options[bsmt_fintype_th] if total_bsmt_sf > 0 else 0.0,
+                'BsmtFinType1': bsmt_fintype_options[bsmt_fin_type_th] if total_bsmt_sf > 0 else 0.0,
             }
                 
             # --- อัปเดตตัวแปรทั่วไปเข้า row_data ---
