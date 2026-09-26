@@ -73,7 +73,7 @@ MSSUBCLASS_MAP = {'1-STORY 1946 & NEWER': np.float64(12.064447214828162),
                   'SPLIT OR MULTI-LEVEL': np.float64(12.005705580571783),
                   'SPLIT FOYER': np.float64(11.912601668656484),
                   'DUPLEX': np.float64(11.817736089772582),
-                  '1-STORY PUD 1946 & NEWER: np.float64(12.186210887326258),
+                  '1-STORY PUD 1946 & NEWER': np.float64(12.186210887326258),
                   '2-STORY PUD - 1946 & NEWER': np.float64(11.810688677393426), 
                   'PUD MULTILEVEL INCL SPLIT LEV/FOYER': np.float64(11.745116592703285),
                   '2 FAMILY CONVERSION': np.float64(11.73539691300343)}
