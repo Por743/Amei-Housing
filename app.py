@@ -62,21 +62,43 @@ NEIGHBORHOOD_MAP = {'CollgCr': np.float64(12.169332259956139),
 EXTERIOR1ST_MAP = {'VinylSd': np.float64(12.189920420399533), 'MetalSd': np.float64(11.874175192515807), 'Wd Sdng': np.float64(11.835468282628185), 'HdBoard': np.float64(11.944799536084124), 'BrkFace': np.float64(12.218156276546033), 'WdShing': np.float64(11.702559919011081), 'CemntBd': np.float64(12.284045439327102), 'Plywood': np.float64(12.053988401909287), 'AsbShng': np.float64(11.672263645974672), 'Stucco': np.float64(12.089706611689746), 'BrkComm': np.float64(11.224442501841812), 'AsphShn': np.float64(12.029983731526684), 'Stone': np.float64(12.345838935721968), 'ImStucc': np.float64(12.476103599529843), 'CBlock': np.float64(11.561725152903833), 'None': 12.029983731526684}
 EXTERIOR2ND_MAP = {'VinylSd': np.float64(12.193646655471017), 'MetalSd': np.float64(11.881719342949529), 'Wd Shng': np.float64(11.845161658207267), 'HdBoard': np.float64(11.970826237484328), 'Plywood': np.float64(11.992985891366112), 'Wd Sdng': np.float64(11.83768699539125), 'CmentBd': np.float64(12.281718483455007), 'BrkFace': np.float64(12.356996718765055), 'Stucco': np.float64(12.017083586945958), 'AsbShng': np.float64(11.727787402555176), 'Brk Cmn': np.float64(11.712311235085469), 'ImStucc': np.float64(12.226166858483968), 'AsphShn': np.float64(11.96049335528058), 'Stone': np.float64(12.20478346531541), 'CBlock': np.float64(11.561725152903833), 'None': 12.029983731526684}
 
-MSSUBCLASS_MAP = {'1-STORY 1946 & NEWER': np.float64(12.064447214828162),
-                  '1-STORY 1945 & OLDER': np.float64(11.445593094097848),
-                  '1-STORY FINISHED ATTIC': np.float64(12.060346943152025),
-                  '1-1/2 STORY UNFINISHED ATTIC': np.float64(11.560327154371183), 
-                  '1-1/2 STORY FINISHED ATTIC': np.float64(11.78915908021649),
-                  '2-STORY 1946 & NEWER': np.float64(12.319992050615664), 
-                  '2-STORY 1945 & OLDER': np.float64(12.001508611509148), 
-                  '2-1/2 STORY ALL AGES': np.float64(12.104289369619238),
-                  'SPLIT OR MULTI-LEVEL': np.float64(12.005705580571783),
-                  'SPLIT FOYER': np.float64(11.912601668656484),
-                  'DUPLEX': np.float64(11.817736089772582),
-                  '1-STORY PUD 1946 & NEWER': np.float64(12.186210887326258),
-                  '2-STORY PUD - 1946 & NEWER': np.float64(11.810688677393426), 
-                  'PUD MULTILEVEL INCL SPLIT LEV/FOYER': np.float64(11.745116592703285),
-                  '2 FAMILY CONVERSION': np.float64(11.73539691300343)}
+MSSUBCLASS_MAP = {
+    '1-STORY 1946 & NEWER': np.float64(12.064447214828162),
+    '1-STORY 1945 & OLDER': np.float64(11.445593094097848),
+    '1-STORY FINISHED ATTIC': np.float64(12.060346943152025),
+    '1-1/2 STORY UNFINISHED ATTIC': np.float64(11.560327154371183), 
+    '1-1/2 STORY FINISHED ATTIC': np.float64(11.78915908021649),
+    '2-STORY 1946 & NEWER': np.float64(12.319992050615664), 
+    '2-STORY 1945 & OLDER': np.float64(12.001508611509148), 
+    '2-1/2 STORY ALL AGES': np.float64(12.104289369619238),
+    'SPLIT OR MULTI-LEVEL': np.float64(12.005705580571783),
+    'SPLIT FOYER': np.float64(11.912601668656484),
+    'DUPLEX': np.float64(11.817736089772582),
+    '1-STORY PUD 1946 & NEWER': np.float64(12.186210887326258),
+    '2-STORY PUD - 1946 & NEWER': np.float64(11.810688677393426), 
+    'PUD MULTILEVEL INCL SPLIT LEV/FOYER': np.float64(11.745116592703285),
+    '2 FAMILY CONVERSION': np.float64(11.73539691300343)
+}
+
+# --- พจนานุกรมสำหรับแมป MSSubClass ไปเป็น HouseStyle อัตโนมัติ ---
+SUBCLASS_TO_HOUSESTYLE = {
+    '1-STORY 1946 & NEWER': 'HouseStyle_1Story',
+    '1-STORY 1945 & OLDER': 'HouseStyle_1Story',
+    '1-STORY FINISHED ATTIC': 'HouseStyle_1Story',
+    '1-1/2 STORY UNFINISHED ATTIC': 'HouseStyle_1.5Unf', 
+    '1-1/2 STORY FINISHED ATTIC': 'HouseStyle_1.5Fin',
+    '2-STORY 1946 & NEWER': 'HouseStyle_2Story', 
+    '2-STORY 1945 & OLDER': 'HouseStyle_2Story', 
+    '2-1/2 STORY ALL AGES': 'HouseStyle_2.5Unf',
+    'SPLIT OR MULTI-LEVEL': 'HouseStyle_SLvl',
+    'SPLIT FOYER': 'HouseStyle_SFoyer',
+    'DUPLEX': 'HouseStyle_2Story',
+    '1-STORY PUD 1946 & NEWER': 'HouseStyle_1Story',
+    '2-STORY PUD - 1946 & NEWER': 'HouseStyle_2Story', 
+    'PUD MULTILEVEL INCL SPLIT LEV/FOYER': 'HouseStyle_SLvl',
+    '2 FAMILY CONVERSION': 'HouseStyle_2Story'
+}
+
 shape_map = {
     "ที่ดินรูปทรงสี่เหลี่ยมปกติ (Regular)": "Reg",
     "ที่ดินรูปทรงเบี้ยว (Moderately Irregular)": "IR2",
@@ -201,6 +223,9 @@ with col_result:
             }
             selected_zoning = zoning_map[ms_zoning_th]
             
+            # ดึงรหัสย่อของ LotShape จาก dictionary
+            selected_shape_code = shape_map[lot_shape]
+            
             value_map = {
                 'GrLivArea': float(gr_liv_area),
                 'LotArea': float(lot_area),
@@ -221,10 +246,8 @@ with col_result:
                 'MSSubClass': MSSUBCLASS_MAP[selected_subclass],
                 'LotFrontage': float(lot_frontage),
                 f'MSZoning_{selected_zoning}': 1.0,
-                f'LotShape_{lot_shape}': 1.0,
+                f'LotShape_{selected_shape_code}': 1.0,  # แก้ไขบั๊กใช้ชื่อย่อตรงนี้
                 'LotConfig_Inside': 1.0,
-                'HouseStyle_1Story': 1.0 if second_flr_sf == 0 else 0.0,
-                'HouseStyle_2Story': 1.0 if second_flr_sf > 0 else 0.0,
                 'RoofStyle_Gable': 1.0,
                 'Foundation_PConc': 1.0,
                 'GarageType_Attchd': 1.0,
@@ -242,9 +265,18 @@ with col_result:
                 'BsmtFinType1': 4.0
             }
                 
+            # --- อัปเดตตัวแปรทั่วไปเข้า row_data ---
             for feature, val in value_map.items():
                 if feature in row_data:
                     row_data[feature] = val
+
+            # --- แมป HouseStyle อัตโนมัติจาก MSSubClass ---
+            # ดึงชื่อคอลัมน์ HouseStyle ที่ตรงกับประเภทบ้านที่เลือก
+            target_style_col = SUBCLASS_TO_HOUSESTYLE.get(selected_subclass, None)
+
+            # ถ้าคอลัมน์นั้นมีอยู่ใน 76 ฟีเจอร์ของโมเดล ให้ตั้งค่าเป็น 1.0
+            if target_style_col and target_style_col in row_data:
+                row_data[target_style_col] = 1.0
 
             input_df = pd.DataFrame([row_data])[expected_features]
 
