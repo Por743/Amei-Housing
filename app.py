@@ -138,6 +138,7 @@ with col_input:
         qual_options = {"Excellent": 5.0, "Good": 4.0, "Typical": 3.0, "Fair": 2.0, "Poor": 1.0}
         c9, c10 = st.columns(2)
         with c9:
+            
             selected_ext1 = st.selectbox(
                                         "วัสดุภายนอก (Exterior 1st)",
                                         options=list(EXTERIOR1ST_MAP.keys()), index=18
