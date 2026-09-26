@@ -62,6 +62,11 @@ NEIGHBORHOOD_MAP = {'CollgCr': np.float64(12.169332259956139),
 EXTERIOR1ST_MAP = {'VinylSd': np.float64(12.189920420399533), 'MetalSd': np.float64(11.874175192515807), 'Wd Sdng': np.float64(11.835468282628185), 'HdBoard': np.float64(11.944799536084124), 'BrkFace': np.float64(12.218156276546033), 'WdShing': np.float64(11.702559919011081), 'CemntBd': np.float64(12.284045439327102), 'Plywood': np.float64(12.053988401909287), 'AsbShng': np.float64(11.672263645974672), 'Stucco': np.float64(12.089706611689746), 'BrkComm': np.float64(11.224442501841812), 'AsphShn': np.float64(12.029983731526684), 'Stone': np.float64(12.345838935721968), 'ImStucc': np.float64(12.476103599529843), 'CBlock': np.float64(11.561725152903833), 'None': 12.029983731526684}
 EXTERIOR2ND_MAP = {'VinylSd': np.float64(12.193646655471017), 'MetalSd': np.float64(11.881719342949529), 'Wd Shng': np.float64(11.845161658207267), 'HdBoard': np.float64(11.970826237484328), 'Plywood': np.float64(11.992985891366112), 'Wd Sdng': np.float64(11.83768699539125), 'CmentBd': np.float64(12.281718483455007), 'BrkFace': np.float64(12.356996718765055), 'Stucco': np.float64(12.017083586945958), 'AsbShng': np.float64(11.727787402555176), 'Brk Cmn': np.float64(11.712311235085469), 'ImStucc': np.float64(12.226166858483968), 'AsphShn': np.float64(11.96049335528058), 'Stone': np.float64(12.20478346531541), 'CBlock': np.float64(11.561725152903833), 'None': 12.029983731526684}
 
+# กำหนดค่าเริ่มต้นให้กับ session_state เพื่อป้องกันข้อมูลหายเมื่อมีการ rerun
+if "predicted_price" not in st.session_state:
+    st.session_state["predicted_price"] = None
+    st.session_state["raw_pred"] = None
+    st.session_state["input_df_display"] = None
 
 @st.cache_resource
 def load_model():
@@ -143,7 +148,6 @@ with col_input:
                                         options=list(EXTERIOR2ND_MAP.keys())
                                         )
             
-            
         with c10:
             exter_qual = st.selectbox("คุณภาพวัสดุ", list(qual_options.keys()), index=0)
             heating_qc = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_options.keys()), index=0)
@@ -154,20 +158,18 @@ with col_input:
 with col_result:
     st.subheader("📊 ผลการประเมินราคา")
     
+    # 1. จัดการลอจิกการกดปุ่มเพื่อคำนวณและบันทึกผลลง st.session_state
     if btn_predict:
         if model is None:
             st.error("โมเดลไม่พร้อมใช้งาน กรุณาตรวจสอบไฟล์ .pkl")
         else:
-            # 1. ดึงรายชื่อ features ที่แท้จริงจากตัวโมเดลโดยตรง
             if hasattr(model, "feature_names_in_"):
                 expected_features = list(model.feature_names_in_)
             else:
                 expected_features = FEATURE_NAMES
 
-            # 2. สร้างพจนานุกรมเก็บค่าเริ่มต้น 0.0 สำหรับทุกคอลัมน์ที่โมเดลต้องการ
             row_data = {col: 0.0 for col in expected_features}
 
-            # แมปตัวเลือกภาษาไทยกลับเป็นรหัสย่อของชุดข้อมูล
             zoning_map = {
                 "ที่อยู่อาศัยหนาแน่นต่ำ (บ้านเดี่ยวทั่วไป)": "RL",
                 "ที่อยู่อาศัยหนาแน่นปานกลาง (เช่น ทาวน์เฮาส์ ตึกแถว)": "RM",
@@ -176,8 +178,6 @@ with col_result:
             }
             selected_zoning = zoning_map[ms_zoning_th]
             
-
-            # 3. แมปตัวแปรหลักที่มีใน UI เข้ากับชื่อคอลัมน์
             value_map = {
                 'GrLivArea': float(gr_liv_area),
                 'LotArea': float(lot_area),
@@ -224,14 +224,11 @@ with col_result:
                 if feature in row_data:
                     row_data[feature] = val
 
-            # 4. แปลงเป็น DataFrame โดยใช้ลำดับคอลัมน์ของโมเดล 100%
             input_df = pd.DataFrame([row_data])[expected_features]
 
             try:
                 raw_pred = float(model.predict(input_df)[0])
                 
-                # --- จุดแปลงค่า Log กลับเป็น Dollar จริง ---
-                # หากค่า raw_pred มีค่าน้อย (ช่วง Log สเกล 5 - 25) ให้แปลงกลับด้วย expm1
                 if 0 < raw_pred < 30:
                     real_price = np.expm1(raw_pred)
                 elif raw_pred <= 0:
@@ -239,19 +236,30 @@ with col_result:
                 else:
                     real_price = raw_pred
 
-                st.metric(
-                    label="ราคาประเมินจริง (Estimated Sale Price)", 
-                    value=f"${real_price:,.2f}"
-                )
-                st.caption(f"ค่าดิบที่ได้จากโมเดล (Log Scale Output): `{raw_pred:.4f}`")
-
-                if real_price <= 0:
-                    st.warning("⚠️ ผลลัพธ์ผิดปกติ: ลองปรับพื้นที่ใช้สอยให้มากขึ้น หรือลดอายุของบ้านลง")
-
-                with st.expander("ดูตาราง Features (ที่ส่งเข้าโมเดล)"):
-                    st.dataframe(input_df.T, height=400)
+                # บันทึกค่าลงใน Session State แทนการแสดงผลทันที
+                st.session_state["predicted_price"] = real_price
+                st.session_state["raw_pred"] = raw_pred
+                st.session_state["input_df_display"] = input_df
 
             except Exception as e:
                 st.error(f"Prediction Error: {e}")
+
+    # 2. จัดการลอจิกการแสดงผล (ดึงข้อมูลจาก st.session_state มาแสดงเสมอถ้ามีข้อมูล)
+    if st.session_state["predicted_price"] is not None:
+        real_price = st.session_state["predicted_price"]
+        raw_pred = st.session_state["raw_pred"]
+        input_df = st.session_state["input_df_display"]
+
+        st.metric(
+            label="ราคาประเมินจริง (Estimated Sale Price)", 
+            value=f"${real_price:,.2f}"
+        )
+        st.caption(f"ค่าดิบที่ได้จากโมเดล (Log Scale Output): `{raw_pred:.4f}`")
+
+        if real_price <= 0:
+            st.warning("⚠️ ผลลัพธ์ผิดปกติ: ลองปรับพื้นที่ใช้สอยให้มากขึ้น หรือลดอายุของบ้านลง")
+
+        with st.expander("ดูตาราง Features (ที่ส่งเข้าโมเดล)"):
+            st.dataframe(input_df.T, height=400)
     else:
         st.info("👈 ระบุรายละเอียดพื้นที่บ้านทางด้านซ้าย แล้วกดปุ่มเพื่อเริ่มประเมินราคา")
