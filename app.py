@@ -212,7 +212,6 @@ with col_result:
                 'WoodDeckSF_binary': 1.0 if has_wood_deck else 0.0,
                 'MSSubClass': MSSUBCLASS_MAP[selected_subclass],
                 'LotFrontage': float(lot_frontage),
-                'MoSold': 6.0,
                 f'MSZoning_{selected_zoning}': 1.0,
                 'LotShape_Reg': 1.0,
                 'LotConfig_Inside': 1.0,
