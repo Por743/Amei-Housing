@@ -59,6 +59,10 @@ NEIGHBORHOOD_MAP = {'CollgCr': np.float64(12.169332259956139),
              'SWISU': np.float64(11.874302215307473), 
              'Blueste': np.float64(12.029983731526684)}
 
+EXTERIOR1ST_MAP = {'VinylSd': np.float64(12.189920420399533), 'MetalSd': np.float64(11.874175192515807), 'Wd Sdng': np.float64(11.835468282628185), 'HdBoard': np.float64(11.944799536084124), 'BrkFace': np.float64(12.218156276546033), 'WdShing': np.float64(11.702559919011081), 'CemntBd': np.float64(12.284045439327102), 'Plywood': np.float64(12.053988401909287), 'AsbShng': np.float64(11.672263645974672), 'Stucco': np.float64(12.089706611689746), 'BrkComm': np.float64(11.224442501841812), 'AsphShn': np.float64(12.029983731526684), 'Stone': np.float64(12.345838935721968), 'ImStucc': np.float64(12.476103599529843), 'CBlock': np.float64(11.561725152903833)}
+EXTERIOR2ND_MAP = {'VinylSd': np.float64(12.193646655471017), 'MetalSd': np.float64(11.881719342949529), 'Wd Shng': np.float64(11.845161658207267), 'HdBoard': np.float64(11.970826237484328), 'Plywood': np.float64(11.992985891366112), 'Wd Sdng': np.float64(11.83768699539125), 'CmentBd': np.float64(12.281718483455007), 'BrkFace': np.float64(12.356996718765055), 'Stucco': np.float64(12.017083586945958), 'AsbShng': np.float64(11.727787402555176), 'Brk Cmn': np.float64(11.712311235085469), 'ImStucc': np.float64(12.226166858483968), 'AsphShn': np.float64(11.96049335528058), 'Stone': np.float64(12.20478346531541), 'Other': np.float64(12.672949516558306), 'CBlock': np.float64(11.561725152903833), 'None': 0}
+
+
 @st.cache_resource
 def load_model():
     if not os.path.exists(MODEL_PATH):
@@ -130,7 +134,14 @@ with col_input:
         c9, c10 = st.columns(2)
         with c9:
             kitchen_qual = st.selectbox("คุณภาพห้องครัว", list(qual_options.keys()), index=2)
-            exter_qual = st.selectbox("คุณภาพวัสดุภายนอก", list(qual_options.keys()), index=2)
+            selected_ext1 = st.selectbox(
+                                        "วัสดุภายนอก (Exterior 1st)",
+                                        options=list(EXTERIOR1ST_MAP.keys())
+                                        )
+            selected_ext1 = st.selectbox(
+                                        "วัสดุภายนอก(หากมีหลายวัสดุ) (Exterior 2nd)",
+                                        options=list(EXTERIOR2ND_MAP.keys())
+                                        )
         with c10:
             heating_qc = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_options.keys()), index=0)
             bsmt_qual = st.selectbox("คุณภาพห้องใต้ดิน", list(qual_options.keys()), index=2)
