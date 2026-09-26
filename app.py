@@ -142,6 +142,8 @@ with col_input:
                                         "วัสดุภายนอก(หากมีหลายวัสดุ) (Exterior 2nd)",
                                         options=list(EXTERIOR2ND_MAP.keys())
                                         )
+            
+            exter_qual = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_options.keys()), index=0)
         with c10:
             heating_qc = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_options.keys()), index=0)
             bsmt_qual = st.selectbox("คุณภาพห้องใต้ดิน", list(qual_options.keys()), index=2)
