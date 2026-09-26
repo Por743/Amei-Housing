@@ -62,6 +62,22 @@ NEIGHBORHOOD_MAP = {'CollgCr': np.float64(12.169332259956139),
 EXTERIOR1ST_MAP = {'VinylSd': np.float64(12.189920420399533), 'MetalSd': np.float64(11.874175192515807), 'Wd Sdng': np.float64(11.835468282628185), 'HdBoard': np.float64(11.944799536084124), 'BrkFace': np.float64(12.218156276546033), 'WdShing': np.float64(11.702559919011081), 'CemntBd': np.float64(12.284045439327102), 'Plywood': np.float64(12.053988401909287), 'AsbShng': np.float64(11.672263645974672), 'Stucco': np.float64(12.089706611689746), 'BrkComm': np.float64(11.224442501841812), 'AsphShn': np.float64(12.029983731526684), 'Stone': np.float64(12.345838935721968), 'ImStucc': np.float64(12.476103599529843), 'CBlock': np.float64(11.561725152903833), 'None': 12.029983731526684}
 EXTERIOR2ND_MAP = {'VinylSd': np.float64(12.193646655471017), 'MetalSd': np.float64(11.881719342949529), 'Wd Shng': np.float64(11.845161658207267), 'HdBoard': np.float64(11.970826237484328), 'Plywood': np.float64(11.992985891366112), 'Wd Sdng': np.float64(11.83768699539125), 'CmentBd': np.float64(12.281718483455007), 'BrkFace': np.float64(12.356996718765055), 'Stucco': np.float64(12.017083586945958), 'AsbShng': np.float64(11.727787402555176), 'Brk Cmn': np.float64(11.712311235085469), 'ImStucc': np.float64(12.226166858483968), 'AsphShn': np.float64(11.96049335528058), 'Stone': np.float64(12.20478346531541), 'CBlock': np.float64(11.561725152903833), 'None': 12.029983731526684}
 
+MSSUBCLASS_MAP = {'1-STORY 1946 & NEWER': np.float64(12.064447214828162),
+                  '1-STORY 1945 & OLDER': np.float64(11.445593094097848),
+                  '1-STORY FINISHED ATTIC': np.float64(12.060346943152025),
+                  '1-1/2 STORY UNFINISHED ATTIC': np.float64(11.560327154371183), 
+                  '1-1/2 STORY FINISHED ATTIC': np.float64(11.78915908021649),
+                  '2-STORY 1946 & NEWER': np.float64(12.319992050615664), 
+                  '2-STORY 1945 & OLDER': np.float64(12.001508611509148), 
+                  '2-1/2 STORY ALL AGES': np.float64(12.104289369619238),
+                  'SPLIT OR MULTI-LEVEL': np.float64(12.005705580571783),
+                  'SPLIT FOYER': np.float64(11.912601668656484),
+                  'DUPLEX': np.float64(11.817736089772582),
+                  '1-STORY PUD 1946 & NEWER: np.float64(12.186210887326258),
+                  '2-STORY PUD - 1946 & NEWER': np.float64(11.810688677393426), 
+                  'PUD MULTILEVEL INCL SPLIT LEV/FOYER': np.float64(11.745116592703285),
+                  '2 FAMILY CONVERSION': np.float64(11.73539691300343)}
+
 # กำหนดค่าเริ่มต้นให้กับ session_state เพื่อป้องกันข้อมูลหายเมื่อมีการ rerun
 if "predicted_price" not in st.session_state:
     st.session_state["predicted_price"] = None
@@ -96,6 +112,8 @@ with col_input:
         with c1:
             gr_liv_area = st.number_input("พื้นที่ใช้สอยรวม (ตารางฟุต - GrLivArea)", min_value=300, max_value=10000, value=1500, step=50)
             lot_area = st.number_input("ขนาดที่ดิน (ตารางฟุต - LotArea)", min_value=1000, max_value=50000, value=10000, step=100)
+            lot_frontage = st.number_input("ความกว้างหน้าที่ดินติดถนน (ฟุต - LotFrontage)", min_value=10, max_value=400, value=70, step=5)
+            selected_subclass = st.selectbox("ประเภทของบ้าน", options=list(MSSUBCLASS_MAP.keys()))
         with c2:
             first_flr_sf = st.number_input("พื้นที่ชั้น 1 (1stFlrSF)", min_value=300, max_value=5000, value=1000, step=50)
             second_flr_sf = st.number_input("พื้นที่ชั้น 2 (2ndFlrSF)", min_value=0, max_value=5000, value=500, step=50)
@@ -192,8 +210,8 @@ with col_result:
                 'HalfBath_binned': 1.0 if half_bath else 0.0,
                 'Fireplaces_binned': 1.0 if has_fireplace else 0.0,
                 'WoodDeckSF_binary': 1.0 if has_wood_deck else 0.0,
-                'MSSubClass': 20.0,
-                'LotFrontage': 70.0,
+                'MSSubClass': MSSUBCLASS_MAP[selected_subclass],
+                'LotFrontage': float(lot_frontage),
                 'MoSold': 6.0,
                 f'MSZoning_{selected_zoning}': 1.0,
                 'LotShape_Reg': 1.0,
