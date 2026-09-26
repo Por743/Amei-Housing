@@ -105,6 +105,55 @@ shape_map = {
     "ที่ดินรูปทรงอิสระ (Irregular - IR3)": "IR3"
 }
 
+roof_map = {
+    "หลังคาหน้าจั่ว (Gable - มาตรฐาน)": "Gable",
+    "หลังคาทรงปั้นหยา (Hip)": "Hip",
+    "หลังคาทรงแบน (Flat)": "Flat",  # ตัวนี้เป็น Baseline ไม่มีในคอลัมน์โมเดล
+    "หลังคาทรงแกมเบรล/ยุ้งฉาง (Gambrel)": "Gambrel",
+    "หลังคาทรงมังซาร์ (Mansard)": "Mansard",
+    "หลังคาทรงเพิงหมาแหงน (Shed)": "Shed"
+}
+foundation_map = {
+    "คอนกรีตเทสำเร็จ / คอนกรีตหล่อ (Poured Concrete - PConc)": "PConc",
+    "บล็อกคอนกรีตอัดแรง (Cinder Block - CBlock)": "CBlock",
+    "พื้นคอนกรีตวางบนคานดิน (Slab)": "Slab",
+    "ฐานรากหินธรรมชาติ (Stone)": "Stone",
+    "ฐานรากโครงสร้างไม้ (Wood)": "Wood"
+}
+
+garage_type_map = {
+    "โรงรถติดกับตัวบ้าน (Attached - Attchd)": "Attchd",
+    "โรงรถแยกจากตัวบ้าน (Detached - Detchd)": "Detchd",
+    "โรงรถฝังในตัวบ้าน/ใต้ห้องชั้นสอง (Built-In)": "BuiltIn",
+    "โรงรถชั้นใต้ดิน (Basement - Basment)": "Basment",
+    "โรงจอดรถแบบหลังคาโปร่ง/เพิงจอดรถ (CarPort)": "CarPort",
+    "ไม่มีโรงจอดรถ (No Garage)": "NoGarage",
+    "โรงจอดรถมากกว่าหนึ่งรูปแบบ (More than one type - 2Types)": "2Types"  # Baseline (ไม่มีในคอลัมน์โมเดล)
+}
+
+mas_vnr_map = {
+    "ไม่มีการกรุอิฐ/หินประดับ (None)": "None",
+    "กรุอิฐโชว์แนวเกรดดี (Brick Face - BrkFace)": "BrkFace",
+    "กรุหินธรรมชาติ (Stone)": "Stone",
+    "กรุอิฐมอญธรรมดา (Brick Common - BrkCmn)": "BrkCmn"  # Baseline (ไม่มีในคอลัมน์โมเดล)
+}
+
+bsmt_exposure_options = {
+    "ทึบแสง มิดชิดใต้ดิน (No Exposure)": 1.0,
+    "แสงส่องถึงเล็กน้อย (Minimum Exposure)": 2.0,
+    "แสงส่องถึงปานกลาง (Average Exposure)": 3.0,
+    "แสงส่องถึงดีมาก / มีทางเดินออกระดับดิน (Good Exposure)": 4.0
+}
+
+bsmt_fintype_options = {
+    "ยังไม่ตกแต่ง เป็นปูนเปลือย (Unfinished - Unf)": 1.0,
+    "ตกแต่งระดับพื้นฐาน (Low Quality - LwQ)": 2.0,
+    "ตกแต่งเป็นห้องสันทนาการ (Rec Room)": 3.0,
+    "ตกแต่งอยู่อาศัยระดับทั่วไป (Below Average - BLQ)": 4.0,
+    "ตกแต่งอยู่อาศัยระดับดี (Average Living - ALQ)": 5.0,
+    "ตกแต่งอยู่อาศัยสมบูรณ์แบบ/เกรดพรีเมียม (Good Living - GLQ)": 6.0
+}
+
 # กำหนดค่าเริ่มต้นให้กับ session_state เพื่อป้องกันข้อมูลหายเมื่อมีการ rerun
 if "predicted_price" not in st.session_state:
     st.session_state["predicted_price"] = None
@@ -161,6 +210,10 @@ with col_input:
             half_bath = st.checkbox("มีห้องน้ำเล็ก (HalfBath)")
         with c6:
             garage_cars = st.slider("ความจุจอดรถ (คัน)", 0, 5, 2)
+            garage_type_th = st.selectbox(
+                "ประเภทโรงจอดรถ (Garage Type)", 
+                options=list(garage_type_map.keys()), 
+                index=0 if garage_cars > 0 else 5
             has_fireplace = st.checkbox("มีเตาผิง (Fireplace)")
             has_wood_deck = st.checkbox("มีระเบียงไม้ (WoodDeck)")
 
@@ -186,19 +239,33 @@ with col_input:
         qual_options = {"Excellent": 5.0, "Good": 4.0, "Typical": 3.0, "Fair": 2.0, "Poor": 1.0}
         c9, c10 = st.columns(2)
         with c9:
-            
+            foundation_th = st.selectbox("ประเภทฐานราก (Foundation)", options=list(foundation_map.keys()), index=0)
+            roof_style_th = st.selectbox("รูปทรงหลังคา (Roof Style)", options=list(roof_map.keys()), index=0)
             selected_ext1 = st.selectbox("วัสดุภายนอก (Exterior 1st)",
                                          options=list(EXTERIOR1ST_MAP.keys()), index=15)
             selected_ext2 = st.selectbox("วัสดุภายนอก(หากมีหลายวัสดุ) (Exterior 2nd)",
                                         options=list(EXTERIOR2ND_MAP.keys()), index=15)
-            exter_qual = st.selectbox("คุณภาพวัสดุ", list(qual_options.keys()), index=2)
-
+            mas_vnr_th = st.selectbox("วัสดุตกแต่งผนังภายนอก (Masonry Veneer)", options=list(mas_vnr_map.keys()), index=0)
         with c10:
+            exter_qual = st.selectbox("คุณภาพวัสดุ", list(qual_options.keys()), index=2)
             kitchen_qual = st.selectbox("คุณภาพห้องครัว", list(qual_options.keys()), index=2)
             heating_qc = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_options.keys()), index=2)
-            bsmt_qual = st.selectbox("คุณภาพห้องใต้ดิน", list(qual_options.keys()), index=2)
-
-    btn_predict = st.button("🔮 คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
+            has_bsmt = total_bsmt_sf > 0
+            bsmt_qual = st.selectbox("คุณภาพโครงสร้างห้องใต้ดิน", list(qual_options.keys()), index=2, disabled=not has_bsmt)
+            bsmt_exposure_th = st.selectbox(
+                "การเปิดรับแสงของห้องใต้ดิน (BsmtExposure)", 
+                options=list(bsmt_exposure_options.keys()), 
+                index=0, 
+                disabled=not has_bsmt
+            )
+            bsmt_fin_type_th = st.selectbox(
+                "ระดับการตกแต่งห้องใต้ดิน (BsmtFinType1)", 
+                options=list(bsmt_fintype_options.keys()), 
+                index=0, 
+                disabled=not has_bsmt
+            )
+            
+            btn_predict = st.button("🔮 คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
 
 with col_result:
     st.subheader("📊 ผลการประเมินราคา")
@@ -221,11 +288,14 @@ with col_result:
                 "โครงการหมู่บ้านจัดสรรริมน้ำ/สไตล์วิลเลจ": "FV",
                 "ที่อยู่อาศัยหนาแน่นสูง (เช่น คอนโด อพาร์ตเมนต์สูง)": "RH"
             }
-            selected_zoning = zoning_map[ms_zoning_th]
             
             # ดึงรหัสย่อของ LotShape จาก dictionary
             selected_shape_code = shape_map[lot_shape]
-            
+            selected_roof_code = roof_map[roof_style_th]
+            selected_zoning = zoning_map[ms_zoning_th]
+            selected_foundation_code = foundation_map[foundation_th]
+            selected_garage_code = garage_type_map[garage_type_th]
+            selected_mas_vnr_code = mas_vnr_map[mas_vnr_th]
             value_map = {
                 'GrLivArea': float(gr_liv_area),
                 'LotArea': float(lot_area),
@@ -248,10 +318,10 @@ with col_result:
                 f'MSZoning_{selected_zoning}': 1.0,
                 f'LotShape_{selected_shape_code}': 1.0,  # แก้ไขบั๊กใช้ชื่อย่อตรงนี้
                 'LotConfig_Inside': 1.0,
-                'RoofStyle_Gable': 1.0,
-                'Foundation_PConc': 1.0,
-                'GarageType_Attchd': 1.0,
-                'MasVnrType_None': 1.0,
+                f'RoofStyle_{selected_roof_code}': 1.0,
+                f'Foundation_{selected_foundation_code}': 1.0,
+                f'GarageType_{selected_garage_code}': 1.0,
+                f'MasVnrType_{selected_mas_vnr_code}': 1.0,
                 'Neighborhood': NEIGHBORHOOD_MAP[selected_neighborhood],
                 'Exterior1st': EXTERIOR1ST_MAP[selected_ext1],
                 'Exterior2nd': EXTERIOR2ND_MAP[selected_ext2],
@@ -261,8 +331,8 @@ with col_result:
                 'BsmtQual': qual_options[bsmt_qual] if total_bsmt_sf > 0 else 0.0,
                 'FireplaceQu': 3.0 if has_fireplace else 0.0,
                 'GarageFinish': 2.0 if garage_cars > 0 else 0.0,
-                'BsmtExposure': 1.0,
-                'BsmtFinType1': 4.0
+                'BsmtExposure': bsmt_exposure_options[bsmt_exposure_th] if total_bsmt_sf > 0 else 0.0,
+                'BsmtFinType1': bsmt_fintype_options[bsmt_fintype_th] if total_bsmt_sf > 0 else 0.0,
             }
                 
             # --- อัปเดตตัวแปรทั่วไปเข้า row_data ---
