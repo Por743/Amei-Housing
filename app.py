@@ -139,14 +139,10 @@ with col_input:
         c9, c10 = st.columns(2)
         with c9:
             
-            selected_ext1 = st.selectbox(
-                                        "วัสดุภายนอก (Exterior 1st)",
-                                        options=list(EXTERIOR1ST_MAP.keys()), index=18
-                                        )
-            selected_ext2 = st.selectbox(
-                                        "วัสดุภายนอก(หากมีหลายวัสดุ) (Exterior 2nd)",
-                                        options=list(EXTERIOR2ND_MAP.keys()), index=18
-                                        )
+            selected_ext1 = st.selectbox("วัสดุภายนอก (Exterior 1st)",
+                                         options=list(EXTERIOR1ST_MAP.keys()), index=18)
+            selected_ext2 = st.selectbox("วัสดุภายนอก(หากมีหลายวัสดุ) (Exterior 2nd)",
+                                        options=list(EXTERIOR2ND_MAP.keys()), index=18)
             exter_qual = st.selectbox("คุณภาพวัสดุ", list(qual_options.keys()), index=2)
 
         with c10:
