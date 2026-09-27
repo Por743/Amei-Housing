@@ -281,10 +281,12 @@ with col_result:
             st.error("โมเดลไม่พร้อมใช้งาน กรุณาตรวจสอบไฟล์ .pkl")
         else:
             if hasattr(model, "feature_names_in_"):
-                expected_features = list(model.feature_names_in_)
+                raw_features = list(model.feature_names_in_)
             else:
-                expected_features = FEATURE_NAMES
+                raw_features = FEATURE_NAMES
 
+            expected_features = list(dict.fromkeys(raw_features))
+            
             row_data = {col: 0.0 for col in expected_features}
 
             zoning_map = {
