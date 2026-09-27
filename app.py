@@ -352,10 +352,19 @@ with col_result:
             if target_style_col and target_style_col in row_data:
                 row_data[target_style_col] = 1.0
 
-            input_df = pd.DataFrame([row_data])[expected_features]
+            # 1. ดึงค่าตัวเลขออกมาเรียงลำดับตามที่โมเดลต้องการ (ถึงชื่อจะซ้ำ ก็จะดึงค่าเดิมไปใส่ให้ครบ)
+            feature_values = [row_data.get(col, 0.0) for col in expected_features]
+            
+            # 2. แปลงเป็น NumPy Array เพื่อข้ามปัญหา "ชื่อคอลัมน์ซ้ำ" ของ Pandas
+            input_array = np.array([feature_values], dtype=np.float64)
+
+            # 3. สร้าง DataFrame เฉพาะสำหรับแสดงตารางให้ดูด้านล่าง (เติม _Index กันชื่อซ้ำ)
+            safe_columns = [f"{col}_{i}" if list(expected_features).count(col) > 1 else col for i, col in enumerate(expected_features)]
+            input_df = pd.DataFrame([feature_values], columns=safe_columns)
 
             try:
-                raw_pred = float(model.predict(input_df)[0])
+                # ส่ง input_array (NumPy) เข้า predict แทน
+                raw_pred = float(model.predict(input_array)[0])
                 
                 if 0 < raw_pred < 30:
                     real_price = np.expm1(raw_pred)
