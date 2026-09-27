@@ -80,7 +80,6 @@ MSSUBCLASS_MAP = {
     '2 FAMILY CONVERSION': np.float64(11.73539691300343)
 }
 
-# --- พจนานุกรมสำหรับแมป MSSubClass ไปเป็น HouseStyle อัตโนมัติ ---
 SUBCLASS_TO_HOUSESTYLE = {
     '1-STORY 1946 & NEWER': 'HouseStyle_1Story',
     '1-STORY 1945 & OLDER': 'HouseStyle_1Story',
@@ -108,7 +107,7 @@ shape_map = {
 roof_map = {
     "หลังคาหน้าจั่ว (Gable - มาตรฐาน)": "Gable",
     "หลังคาทรงปั้นหยา (Hip)": "Hip",
-    "หลังคาทรงแบน (Flat)": "Flat",  # ตัวนี้เป็น Baseline ไม่มีในคอลัมน์โมเดล
+    "หลังคาทรงแบน (Flat)": "Flat", 
     "หลังคาทรงแกมเบรล/ยุ้งฉาง (Gambrel)": "Gambrel",
     "หลังคาทรงมังซาร์ (Mansard)": "Mansard",
     "หลังคาทรงเพิงหมาแหงน (Shed)": "Shed"
@@ -128,14 +127,14 @@ garage_type_map = {
     "โรงรถชั้นใต้ดิน (Basement - Basment)": "Basment",
     "โรงจอดรถแบบหลังคาโปร่ง/เพิงจอดรถ (CarPort)": "CarPort",
     "ไม่มีโรงจอดรถ (No Garage)": "NoGarage",
-    "โรงจอดรถมากกว่าหนึ่งรูปแบบ (More than one type - 2Types)": "2Types"  # Baseline (ไม่มีในคอลัมน์โมเดล)
+    "โรงจอดรถมากกว่าหนึ่งรูปแบบ (More than one type - 2Types)": "2Types" 
 }
 
 mas_vnr_map = {
     "ไม่มีการกรุอิฐ/หินประดับ (None)": "None",
     "กรุอิฐโชว์แนวเกรดดี (Brick Face - BrkFace)": "BrkFace",
     "กรุหินธรรมชาติ (Stone)": "Stone",
-    "กรุอิฐมอญธรรมดา (Brick Common - BrkCmn)": "BrkCmn"  # Baseline (ไม่มีในคอลัมน์โมเดล)
+    "กรุอิฐมอญธรรมดา (Brick Common - BrkCmn)": "BrkCmn" 
 }
 
 bsmt_exposure_options = {
@@ -154,7 +153,6 @@ bsmt_fintype_options = {
     "ตกแต่งอยู่อาศัยสมบูรณ์แบบ/เกรดพรีเมียม (Good Living - GLQ)": 6.0
 }
 
-# กำหนดค่าเริ่มต้นให้กับ session_state เพื่อป้องกันข้อมูลหายเมื่อมีการ rerun
 if "predicted_price" not in st.session_state:
     st.session_state["predicted_price"] = None
     st.session_state["raw_pred"] = None
@@ -205,9 +203,17 @@ with col_input:
         with c4:
             bedroom = st.slider("ห้องนอน (BedroomAbvGr)", 0, 8, 3)
             tot_rms = st.slider("ห้องทั้งหมดไม่รวมห้องน้ำ (TotRms)", 2, 14, 6)
+            # เพิ่มพื้นที่ระเบียง
+            porch_area = st.number_input("พื้นที่ชานบ้าน/ระเบียง (ตารางฟุต)", min_value=0, max_value=2000, value=0, step=20)
         with c5:
             full_bath = st.slider("ห้องน้ำเต็มรูปแบบ (FullBath)", 0, 4, 2)
             half_bath = st.checkbox("มีห้องน้ำเล็ก (HalfBath)")
+            # เพิ่มประเภทของระเบียง
+            porch_type_th = st.selectbox(
+                "ลักษณะชานบ้าน/ระเบียง", 
+                ["ระเบียงเปิดโล่ง (Open Porch)", "ระเบียงทึบ/กระจก/มุ้งลวด (Enclosed/Screen)"],
+                disabled=(porch_area == 0)
+            )
         with c6:
             garage_cars = st.slider("ความจุจอดรถ (คัน)", 0, 5, 2)
             garage_type_th = st.selectbox(
@@ -270,7 +276,6 @@ with col_input:
 with col_result:
     st.subheader("📊 ผลการประเมินราคา")
     
-    # 1. จัดการลอจิกการกดปุ่มเพื่อคำนวณและบันทึกผลลง st.session_state
     if btn_predict:
         if model is None:
             st.error("โมเดลไม่พร้อมใช้งาน กรุณาตรวจสอบไฟล์ .pkl")
@@ -289,7 +294,6 @@ with col_result:
                 "ที่อยู่อาศัยหนาแน่นสูง (เช่น คอนโด อพาร์ตเมนต์สูง)": "RH"
             }
             
-            # ดึงรหัสย่อของ LotShape จาก dictionary
             selected_shape_code = shape_map[lot_shape]
             selected_roof_code = roof_map[roof_style_th]
             selected_zoning = zoning_map[ms_zoning_th]
@@ -314,6 +318,8 @@ with col_result:
                 'HalfBath_binned': 1.0 if half_bath else 0.0,
                 'Fireplaces_binned': 1.0 if has_fireplace else 0.0,
                 'WoodDeckSF_binary': 1.0 if has_wood_deck else 0.0,
+                'TotalPorchSF': float(porch_area),  # นำพื้นที่ระเบียงมาใส่
+                'OpenPorchSF_binary': 1.0 if (porch_area > 0 and porch_type_th == "ระเบียงเปิดโล่ง (Open Porch)") else 0.0, # ตัดสินว่าเป็น 1.0 ต่อเมื่อเปิดโล่งและพื้นที่ > 0
                 'MSSubClass': MSSUBCLASS_MAP[selected_subclass],
                 'LotFrontage': float(lot_frontage),
                 f'MSZoning_{selected_zoning}': 1.0,
@@ -337,16 +343,12 @@ with col_result:
                 'BsmtFinType1': bsmt_fintype_options[bsmt_fin_type_th] if total_bsmt_sf > 0 else 0.0,
             }
                 
-            # --- อัปเดตตัวแปรทั่วไปเข้า row_data ---
             for feature, val in value_map.items():
                 if feature in row_data:
                     row_data[feature] = val
 
-            # --- แมป HouseStyle อัตโนมัติจาก MSSubClass ---
-            # ดึงชื่อคอลัมน์ HouseStyle ที่ตรงกับประเภทบ้านที่เลือก
             target_style_col = SUBCLASS_TO_HOUSESTYLE.get(selected_subclass, None)
 
-            # ถ้าคอลัมน์นั้นมีอยู่ใน 76 ฟีเจอร์ของโมเดล ให้ตั้งค่าเป็น 1.0
             if target_style_col and target_style_col in row_data:
                 row_data[target_style_col] = 1.0
 
@@ -362,7 +364,6 @@ with col_result:
                 else:
                     real_price = raw_pred
 
-                # บันทึกค่าลงใน Session State แทนการแสดงผลทันที
                 st.session_state["predicted_price"] = real_price
                 st.session_state["raw_pred"] = raw_pred
                 st.session_state["input_df_display"] = input_df
@@ -370,7 +371,6 @@ with col_result:
             except Exception as e:
                 st.error(f"Prediction Error: {e}")
 
-    # 2. จัดการลอจิกการแสดงผล (ดึงข้อมูลจาก st.session_state มาแสดงเสมอถ้ามีข้อมูล)
     if st.session_state["predicted_price"] is not None:
         real_price = st.session_state["predicted_price"]
         raw_pred = st.session_state["raw_pred"]
