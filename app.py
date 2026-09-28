@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import os
 import joblib
+import folium
+from streamlit_folium import st_folium
 
 st.set_page_config(
     page_title="House Price Valuation - 76 Features",
