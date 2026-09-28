@@ -201,7 +201,7 @@ def render_neighborhood_map(selected_nh):
     m = folium.Map(
         location=[geo_data['lat'], geo_data['lon']], 
         zoom_start=14, 
-        tiles="CartoDB positron"  # สไตล์แผนที่โทนสว่าง สะอาดตา เหมาะกับ Dashboard
+        tiles="OpenStreetMap"  # สไตล์แผนที่โทนสว่าง สะอาดตา เหมาะกับ Dashboard
     )
 
     # วาดวงกลมไฮไลต์อาณาเขตย่าน
