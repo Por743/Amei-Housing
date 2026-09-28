@@ -157,7 +157,72 @@ if "predicted_price" not in st.session_state:
     st.session_state["predicted_price"] = None
     st.session_state["raw_pred"] = None
     st.session_state["input_df_display"] = None
+import streamlit as st
+import folium
+from streamlit_folium import st_folium
 
+# 1. พจนานุกรมพิกัดกึ่งกลางและรัศมีโดยประมาณของแต่ละย่านใน Ames, Iowa
+# (พิกัดอ้างอิงพื้นที่จริงรอบๆ มหาวิทยาลัย Iowa State University)
+NEIGHBORHOOD_GEO = {
+    'CollgCr': {'name': 'College Creek', 'lat': 42.0210, 'lon': -93.6850, 'radius': 600},
+    'Veenker': {'name': 'Veenker', 'lat': 42.0405, 'lon': -93.6530, 'radius': 450},
+    'Crawfor': {'name': 'Crawford', 'lat': 42.0150, 'lon': -93.6450, 'radius': 500},
+    'NoRidge': {'name': 'Northridge', 'lat': 42.0505, 'lon': -93.6550, 'radius': 550},
+    'Mitchel': {'name': 'Mitchell', 'lat': 41.9930, 'lon': -93.6050, 'radius': 600},
+    'Somerst': {'name': 'Somerset', 'lat': 42.0520, 'lon': -93.6430, 'radius': 500},
+    'NWAmes': {'name': 'Northwest Ames', 'lat': 42.0500, 'lon': -93.6330, 'radius': 700},
+    'OldTown': {'name': 'Old Town', 'lat': 42.0290, 'lon': -93.6130, 'radius': 650},
+    'BrkSide': {'name': 'Brookside', 'lat': 42.0260, 'lon': -93.6280, 'radius': 400},
+    'Sawyer': {'name': 'Sawyer', 'lat': 42.0330, 'lon': -93.6680, 'radius': 600},
+    'NridgHt': {'name': 'Northridge Heights', 'lat': 42.0600, 'lon': -93.6550, 'radius': 550},
+    'NAmes': {'name': 'North Ames', 'lat': 42.0420, 'lon': -93.6200, 'radius': 800},
+    'SawyerW': {'name': 'Sawyer West', 'lat': 42.0340, 'lon': -93.6850, 'radius': 500},
+    'IDOTRR': {'name': 'Iowa DOT and Rail Road', 'lat': 42.0190, 'lon': -93.6230, 'radius': 450},
+    'MeadowV': {'name': 'Meadow Village', 'lat': 41.9920, 'lon': -93.6120, 'radius': 350},
+    'Edwards': {'name': 'Edwards', 'lat': 42.0220, 'lon': -93.6660, 'radius': 700},
+    'Timber': {'name': 'Timberland', 'lat': 41.9980, 'lon': -93.6500, 'radius': 550},
+    'Gilbert': {'name': 'Gilbert', 'lat': 42.0800, 'lon': -93.6480, 'radius': 650},
+    'StoneBr': {'name': 'Stone Brook', 'lat': 42.0610, 'lon': -93.6330, 'radius': 450},
+    'ClearCr': {'name': 'Clear Creek', 'lat': 42.0280, 'lon': -93.6520, 'radius': 500},
+    'NPkVill': {'name': 'Northpark Villa', 'lat': 42.0500, 'lon': -93.6260, 'radius': 300},
+    'Blmngtn': {'name': 'Bloomington Heights', 'lat': 42.0620, 'lon': -93.6420, 'radius': 400},
+    'BrDale': {'name': 'Briardale', 'lat': 42.0525, 'lon': -93.6280, 'radius': 300},
+    'SWISU': {'name': 'South & West of ISU', 'lat': 42.0180, 'lon': -93.6510, 'radius': 500},
+    'Blueste': {'name': 'Bluestem', 'lat': 42.0090, 'lon': -93.6450, 'radius': 300}
+}
+
+# 2. ฟังก์ชันเรนเดอร์แผนที่
+def render_neighborhood_map(selected_nh):
+    geo_data = NEIGHBORHOOD_GEO.get(selected_nh, {'lat': 42.0308, 'lon': -93.6319, 'radius': 500, 'name': selected_nh})
+    
+    # กำหนดจุดศูนย์กลางแผนที่ไปที่ย่านนั้นๆ
+    m = folium.Map(
+        location=[geo_data['lat'], geo_data['lon']], 
+        zoom_start=14, 
+        tiles="CartoDB positron"  # สไตล์แผนที่โทนสว่าง สะอาดตา เหมาะกับ Dashboard
+    )
+
+    # วาดวงกลมไฮไลต์อาณาเขตย่าน
+    folium.Circle(
+        location=[geo_data['lat'], geo_data['lon']],
+        radius=geo_data['radius'],
+        color="#2b7bba",
+        weight=2,
+        fill=True,
+        fill_color="#3388ff",
+        fill_opacity=0.35,
+        tooltip=f"<b>{geo_data['name']} ({selected_nh})</b>"
+    ).add_to(m)
+
+    # ปักหมุดกลางย่าน
+    folium.Marker(
+        location=[geo_data['lat'], geo_data['lon']],
+        popup=f"📍 ย่าน: {geo_data['name']}",
+        icon=folium.Icon(color="red", icon="home")
+    ).add_to(m)
+
+    return m
+    
 @st.cache_resource
 def load_model():
     if not os.path.exists(MODEL_PATH):
@@ -274,8 +339,16 @@ with col_input:
     btn_predict = st.button("🔮 คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
 
 with col_result:
-    st.subheader("📊 ผลการประเมินราคา")
     
+    st.subheader("📊 ผลการประเมินราคา")
+    ##########
+    st.markdown("#### 🗺️ ที่ตั้งและทำเลของย่านที่เลือก")
+    st.caption(f"แสดงตำแหน่งของย่าน: **{selected_neighborhood}**")
+    
+    # เรนเดอร์แผนที่บน Streamlit
+    map_obj = render_neighborhood_map(selected_neighborhood)
+    st_folium(map_obj, width=450, height=300)
+    ########
     if btn_predict:
         if model is None:
             st.error("โมเดลไม่พร้อมใช้งาน กรุณาตรวจสอบไฟล์ .pkl")
