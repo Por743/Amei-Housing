@@ -84,7 +84,7 @@ mas_vnr_map = {"ไม่มีการกรุประดับ (None)": "No
 
 # --- ตารางปรับ Ordinal Mappings เพื่อให้ตรงสเกล 0-N (สำคัญมาก) ---
 qual_options = {"ไม่มี (None)": 0.0, "แย่มาก (Poor)": 1.0, "พอใช้ (Fair)": 2.0, "ปานกลาง (Typical)": 3.0, "ดี (Good)": 4.0, "ดีเยี่ยม (Excellent)": 5.0}
-bsmt_exposure_options = {"ไม่มีห้องใต้ดิน (None)": 0.0, "ทึบแสง (No Exposure)": 1.0, "แสงส่องถึงเล็กน้อย (Minimum)": 2.0, "แสงส่องถึงปานกลาง (Average)": 3.0, "แสงส่องถึงดีมาก (Good)": 4.0}
+bsmt_exposure_options = {"ไม่มีห้องใต้ดิน (None)": 0.0, "ทึบแสง (No Exposure)": 0, "แสงส่องถึงเล็กน้อย (Minimum)": 1.0, "แสงส่องถึงปานกลาง (Average)": 2.0, "แสงส่องถึงดีมาก (Good)": 3.0}
 bsmt_fintype_options = {"ไม่มีห้องใต้ดิน (None)": 0.0, "เป็นปูนเปลือย (Unf)": 1.0, "ตกแต่งระดับพื้นฐาน (LwQ)": 2.0, "ห้องสันทนาการ (Rec)": 3.0, "ตกแต่งทั่วไป (BLQ)": 4.0, "ตกแต่งดี (ALQ)": 5.0, "เกรดพรีเมียม (GLQ)": 6.0}
 garage_finish_options = {"ไม่มีโรงรถ (None)": 0.0, "ยังไม่ตกแต่ง (Unf)": 1.0, "ตกแต่งบางส่วน (RFn)": 2.0, "ตกแต่งสมบูรณ์ (Fin)": 3.0}
 
@@ -206,9 +206,9 @@ with col_input:
             has_bsmt_full = st.checkbox("ห้องน้ำเต็มรูปแบบใต้ดิน", value=True, disabled=not has_bsmt)
             has_bsmt_half = st.checkbox("ห้องน้ำเล็กใต้ดิน", value=False, disabled=not has_bsmt)
         with c8:
-            bsmt_qual = st.selectbox("คุณภาพโครงสร้างห้องใต้ดิน", list(qual_1_options.keys()), index=4, disabled=not has_bsmt) # Default: Good
+            bsmt_qual = st.selectbox("คุณภาพโครงสร้างห้องใต้ดิน", list(qual_1_options.keys()), index=2, disabled=not has_bsmt) # Default: Good
             bsmt_exposure_th = st.selectbox("การเปิดรับแสงของห้องใต้ดิน", options=list(bsmt_exposure_options.keys()), index=1, disabled=not has_bsmt) # Default: No
-            bsmt_fin_type_th = st.selectbox("ระดับการตกแต่งห้องใต้ดิน", options=list(bsmt_fintype_options.keys()), index=6, disabled=not has_bsmt) # Default: GLQ
+            bsmt_fin_type_th = st.selectbox("ระดับการตกแต่งห้องใต้ดิน", options=list(bsmt_fintype_options.keys()), index=0, disabled=not has_bsmt) # Default: GLQ
 
     with st.expander("4. โรงจอดรถและภายนอก (Garage & Exterior)", expanded=True):
         c9, c10, c11 = st.columns(3)
@@ -216,7 +216,7 @@ with col_input:
             garage_cars = st.slider("ความจุจอดรถ (คัน)", 0, 5, 2)
             garage_area = st.number_input("พื้นที่โรงจอดรถ (GarageArea)", min_value=0, max_value=2000, value=548, step=50)
             garage_type_th = st.selectbox("ประเภทโรงจอดรถ", options=list(garage_type_map.keys()), index=0 if garage_cars > 0 else 5)
-            garage_finish_th = st.selectbox("สภาพการตกแต่งโรงจอดรถ", options=list(garage_finish_options.keys()), index=2 if garage_cars > 0 else 0) # Default: RFn
+            garage_finish_th = st.selectbox("สภาพการตกแต่งโรงจอดรถ", options=list(garage_finish_options.keys()), index=2 if garage_cars > 0 else 0, disabled=(garage_cars == 0 or garage_area == 0)) # Default: RFn
         with c10:
             porch_area = st.number_input("พื้นที่ชานบ้าน/ระเบียงรวม", min_value=0, max_value=2000, value=0, step=20)
             has_open_porch = st.checkbox("มีระเบียงเปิดโล่ง", value=True)
@@ -245,7 +245,7 @@ with col_input:
         with c13:
             overall_qual = st.slider("คุณภาพรวม (OverallQual)", 1, 10, 7)
             overall_cond = st.slider("สภาพรวม (OverallCond)", 1, 10, 5)
-            exter_qual = st.selectbox("คุณภาพวัสดุ", list(qual_1_options.keys()), index=0) # Good
+            exter_qual = st.selectbox("คุณภาพวัสดุ", list(qual_1_options.keys()), index=2) # Good
             kitchen_qual = st.selectbox("คุณภาพห้องครัว", list(qual_1_options.keys()), index=4) # Good
             heating_qc = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_2_options.keys()), index=3) # Good
             
@@ -353,7 +353,7 @@ with col_result:
                 'HeatingQC': qual_2_options[heating_qc],
                 'BsmtQual': qual_1_options[bsmt_qual] if calc_total_bsmt_sf > 0 else 0.0,
                 'FireplaceQu': qual_2_options[FireplaceQu] if has_fireplace else -1.0,
-                'GarageFinish': garage_finish_options[garage_finish_th] if garage_area > 0 else 0.0,
+                'GarageFinish': garage_finish_options[garage_finish_th] if (garage_cars > 0 and garage_area > 0) else 0.0,
                 'BsmtExposure': bsmt_exposure_options[bsmt_exposure_th] if calc_total_bsmt_sf > 0 else 0.0,
                 'BsmtFinType1': bsmt_fintype_options[bsmt_fin_type_th] if calc_total_bsmt_sf > 0 else 0.0,
             } 
