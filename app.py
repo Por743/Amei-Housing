@@ -116,10 +116,26 @@ NEIGHBORHOOD_GEO = {
     'Blueste': {'name': 'Bluestem', 'lat': 42.0090, 'lon': -93.6450, 'radius': 300}
 }
 
+qual_1_options = {
+    "พอใช้ (Fair - Fa)": 0.0,
+    "ปานกลาง (Typical - TA)": 1.0,
+    "ดี (Good - Gd)": 2.0,
+    "ดีเยี่ยม (Excellent - Ex)": 3.0
+}
+qual_2_options = {
+    "แย่มาก (Poor - Po)": 0.0,
+    "พอใช้ (Fair - Fa)": 1.0,
+    "ปานกลาง (Typical - TA)": 2.0,
+    "ดี (Good - Gd)": 3.0,
+    "ดีเยี่ยม (Excellent - Ex)": 4.0
+}
+
 if "predicted_price" not in st.session_state:
     st.session_state["predicted_price"] = None
     st.session_state["raw_pred"] = None
     st.session_state["input_df_display"] = None
+
+
 
 def render_neighborhood_map(selected_nh):
     geo_data = NEIGHBORHOOD_GEO.get(selected_nh, {'lat': 42.0308, 'lon': -93.6319, 'radius': 500, 'name': selected_nh})
@@ -178,6 +194,7 @@ with col_input:
             full_bath = st.slider("ห้องน้ำเต็มรูปแบบ (FullBath)", 0, 4, 2)
             half_bath = st.checkbox("มีห้องน้ำเล็ก (HalfBath)", value=True)
             has_fireplace = st.checkbox("มีเตาผิง (Fireplace)", value=False)
+            FireplaceQu = st.selectbox("คุณภาพเตาผิง", list(qual_2_options.keys()), index=0, disabled=not has_fireplace) 
 
     with st.expander("3. ชั้นใต้ดิน (Basement)", expanded=True):
         c6, c7, c8 = st.columns(3)
@@ -189,7 +206,7 @@ with col_input:
             has_bsmt_full = st.checkbox("ห้องน้ำเต็มรูปแบบใต้ดิน", value=True, disabled=not has_bsmt)
             has_bsmt_half = st.checkbox("ห้องน้ำเล็กใต้ดิน", value=False, disabled=not has_bsmt)
         with c8:
-            bsmt_qual = st.selectbox("คุณภาพโครงสร้างห้องใต้ดิน", list(qual_options.keys()), index=4, disabled=not has_bsmt) # Default: Good
+            bsmt_qual = st.selectbox("คุณภาพโครงสร้างห้องใต้ดิน", list(qual_1_options.keys()), index=4, disabled=not has_bsmt) # Default: Good
             bsmt_exposure_th = st.selectbox("การเปิดรับแสงของห้องใต้ดิน", options=list(bsmt_exposure_options.keys()), index=1, disabled=not has_bsmt) # Default: No
             bsmt_fin_type_th = st.selectbox("ระดับการตกแต่งห้องใต้ดิน", options=list(bsmt_fintype_options.keys()), index=6, disabled=not has_bsmt) # Default: GLQ
 
@@ -228,9 +245,9 @@ with col_input:
         with c13:
             overall_qual = st.slider("คุณภาพรวม (OverallQual)", 1, 10, 7)
             overall_cond = st.slider("สภาพรวม (OverallCond)", 1, 10, 5)
-            exter_qual = st.selectbox("คุณภาพวัสดุ", list(qual_options.keys()), index=4) # Good
-            kitchen_qual = st.selectbox("คุณภาพห้องครัว", list(qual_options.keys()), index=4) # Good
-            heating_qc = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_options.keys()), index=5) # Excellent
+            exter_qual = st.selectbox("คุณภาพวัสดุ", list(qual_1_options.keys()), index=0) # Good
+            kitchen_qual = st.selectbox("คุณภาพห้องครัว", list(qual_1_options.keys()), index=4) # Good
+            heating_qc = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_2_options.keys()), index=3) # Good
             
             selected_ext1 = st.selectbox("วัสดุภายนอก 1", options=list(EXTERIOR1ST_MAP.keys()), index=list(EXTERIOR1ST_MAP.keys()).index('VinylSd'))
             selected_ext2 = st.selectbox("วัสดุภายนอก 2", options=list(EXTERIOR2ND_MAP.keys()), index=list(EXTERIOR2ND_MAP.keys()).index('VinylSd'))
@@ -331,15 +348,15 @@ with col_result:
                 'Exterior2nd': EXTERIOR2ND_MAP[selected_ext2],
                 
                 # --- ใช้ Mapping Ordinal ใหม่ที่มีค่า 0.0 (None) แล้ว ---
-                'KitchenQual': qual_options[kitchen_qual],
-                'ExterQual': qual_options[exter_qual],
-                'HeatingQC': qual_options[heating_qc],
-                'BsmtQual': qual_options[bsmt_qual] if calc_total_bsmt_sf > 0 else 0.0,
-                'FireplaceQu': 3.0 if has_fireplace else 0.0, # Default ให้เป็น 3.0 (TA) หากเลือกเตาผิง
+                'KitchenQual': qual_1_options[kitchen_qual],
+                'ExterQual': qual_1_options[exter_qual],
+                'HeatingQC': qual_2_options[heating_qc],
+                'BsmtQual': qual_1_options[bsmt_qual] if calc_total_bsmt_sf > 0 else 0.0,
+                'FireplaceQu': qual_2_options[FireplaceQu] if has_fireplace else -1.0,
                 'GarageFinish': garage_finish_options[garage_finish_th] if garage_area > 0 else 0.0,
                 'BsmtExposure': bsmt_exposure_options[bsmt_exposure_th] if calc_total_bsmt_sf > 0 else 0.0,
                 'BsmtFinType1': bsmt_fintype_options[bsmt_fin_type_th] if calc_total_bsmt_sf > 0 else 0.0,
-            }
+            } 
                 
             for feature, val in value_map.items():
                 if feature in row_data:
