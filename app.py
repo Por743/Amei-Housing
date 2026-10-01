@@ -246,7 +246,7 @@ with col_input:
             overall_qual = st.slider("คุณภาพรวม (OverallQual)", 1, 10, 7)
             overall_cond = st.slider("สภาพรวม (OverallCond)", 1, 10, 5)
             exter_qual = st.selectbox("คุณภาพวัสดุ", list(qual_1_options.keys()), index=2) # Good
-            kitchen_qual = st.selectbox("คุณภาพห้องครัว", list(qual_1_options.keys()), index=4) # Good
+            kitchen_qual = st.selectbox("คุณภาพห้องครัว", list(qual_1_options.keys()), index=2) # Good
             heating_qc = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_2_options.keys()), index=3) # Good
             
             selected_ext1 = st.selectbox("วัสดุภายนอก 1", options=list(EXTERIOR1ST_MAP.keys()), index=list(EXTERIOR1ST_MAP.keys()).index('VinylSd'))
