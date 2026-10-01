@@ -16,33 +16,31 @@ st.set_page_config(
 MODEL_PATH = "linear_regression_model.pkl" 
 
 # รายชื่อ Features ใหม่ที่อัปเดตจากคำถามของคุณ
-FEATURE_NAMES = [
-    'MSSubClass', 'LotFrontage', 'LotArea', 'BsmtFinSF1', 'BsmtUnfSF',
-    'TotalBsmtSF', '1stFlrSF', '2ndFlrSF', 'GrLivArea', 'FullBath',
-    'BedroomAbvGr', 'TotRmsAbvGrd', 'GarageYrBlt', 'GarageCars',
-    'GarageArea', 'KitchenAbvGr_binned', 'BsmtHalfBath_binned',
-    'HalfBath_binned', 'BsmtFullBath_binned', 'Fireplaces_binned',
-    'OverallCond_binned', 'OverallQual_binned', 'TotalPorchSF',
-    'ScreenPorch_binary', 'EnclosedPorch_binary', 'BsmtFinSF2_binary',
-    'MasVnrArea_binary', 'OpenPorchSF_binary', '3SsnPorch_binary',
-    'WoodDeckSF_binary', 'LowQualFinSF_binary', 'PoolArea_binary',
-    'MiscVal_binary', 'HouseAge', 'RemodAge', 'IsRemodeled', 'MSZoning_FV',
-    'MSZoning_RH', 'MSZoning_RL', 'MSZoning_RM', 'LotShape_IR2',
-    'LotShape_IR3', 'LotShape_Reg', 'LotConfig_CulDSac', 'LotConfig_FR2',
-    'LotConfig_FR3', 'LotConfig_Inside', 'HouseStyle_1.5Unf',
-    'HouseStyle_1Story', 'HouseStyle_2.5Fin', 'HouseStyle_2.5Unf',
-    'HouseStyle_2Story', 'HouseStyle_SFoyer', 'HouseStyle_SLvl',
-    'RoofStyle_Gable', 'RoofStyle_Gambrel', 'RoofStyle_Hip',
-    'RoofStyle_Mansard', 'RoofStyle_Shed', 'MasVnrType_BrkFace',
-    'MasVnrType_None', 'MasVnrType_Stone', 'ExterQual_Fa', 'ExterQual_Gd',
-    'ExterQual_TA', 'Foundation_CBlock', 'Foundation_PConc',
-    'Foundation_Slab', 'Foundation_Stone', 'Foundation_Wood',
-    'GarageType_Attchd', 'GarageType_Basment', 'GarageType_BuiltIn',
-    'GarageType_CarPort', 'GarageType_Detchd', 'GarageType_NoGarage',
-    'Neighborhood', 'Exterior1st', 'Exterior2nd', 'MSSubClass', 'ExterQual',
-    'BsmtQual', 'BsmtExposure', 'BsmtFinType1', 'HeatingQC', 'KitchenQual',
-    'FireplaceQu', 'GarageFinish'
-]
+FEATURE_NAMES = ['LotFrontage', 'LotArea', 'BsmtFinSF1', 'BsmtUnfSF', 'TotalBsmtSF',
+       '1stFlrSF', '2ndFlrSF', 'GrLivArea', 'FullBath', 'BedroomAbvGr',
+       'TotRmsAbvGrd', 'GarageYrBlt', 'GarageCars', 'GarageArea',
+       'KitchenAbvGr_binned', 'BsmtHalfBath_binned', 'HalfBath_binned',
+       'BsmtFullBath_binned', 'Fireplaces_binned', 'OverallCond_binned',
+       'OverallQual_binned', 'TotalPorchSF', 'ScreenPorch_binary',
+       'EnclosedPorch_binary', 'BsmtFinSF2_binary', 'MasVnrArea_binary',
+       'OpenPorchSF_binary', '3SsnPorch_binary', 'WoodDeckSF_binary',
+       'LowQualFinSF_binary', 'PoolArea_binary', 'MiscVal_binary', 'HouseAge',
+       'RemodAge', 'IsRemodeled', 'MSZoning_FV', 'MSZoning_RH', 'MSZoning_RL',
+       'MSZoning_RM', 'LotShape_IR2', 'LotShape_IR3', 'LotShape_Reg',
+       'LotConfig_CulDSac', 'LotConfig_FR2', 'LotConfig_FR3',
+       'LotConfig_Inside', 'HouseStyle_1.5Unf', 'HouseStyle_1Story',
+       'HouseStyle_2.5Fin', 'HouseStyle_2.5Unf', 'HouseStyle_2Story',
+       'HouseStyle_SFoyer', 'HouseStyle_SLvl', 'RoofStyle_Gable',
+       'RoofStyle_Gambrel', 'RoofStyle_Hip', 'RoofStyle_Mansard',
+       'RoofStyle_Shed', 'MasVnrType_BrkFace', 'MasVnrType_None',
+       'MasVnrType_Stone', 'ExterQual_Fa', 'ExterQual_Gd', 'ExterQual_TA',
+       'Foundation_CBlock', 'Foundation_PConc', 'Foundation_Slab',
+       'Foundation_Stone', 'Foundation_Wood', 'GarageType_Attchd',
+       'GarageType_Basment', 'GarageType_BuiltIn', 'GarageType_CarPort',
+       'GarageType_Detchd', 'GarageType_NoGarage', 'Neighborhood',
+       'Exterior1st', 'Exterior2nd', 'MSSubClass', 'ExterQual', 'BsmtQual',
+       'BsmtExposure', 'BsmtFinType1', 'HeatingQC', 'KitchenQual',
+       'FireplaceQu', 'GarageFinish']
 
 NEIGHBORHOOD_MAP = {'CollgCr': np.float64(12.169332259956139), 'Veenker': np.float64(12.266186946338435), 'Crawfor': np.float64(12.237256187249674), 'NoRidge': np.float64(12.596944834295265), 'Mitchel': np.float64(11.967956343260019), 'Somerst': np.float64(12.29107485188606), 'NWAmes': np.float64(12.137222248623926), 'OldTown': np.float64(11.73049818713178), 'BrkSide': np.float64(11.668680867662754), 'Sawyer': np.float64(11.805959895258422), 'NridgHt': np.float64(12.589057073179353), 'NAmes': np.float64(11.877717162561297), 'SawyerW': np.float64(12.040539413569535), 'IDOTRR': np.float64(11.563381912602678), 'MeadowV': np.float64(11.557207645181311), 'Edwards': np.float64(11.745846688038602), 'Timber': np.float64(12.32619253054482), 'Gilbert': np.float64(12.171106002634197), 'StoneBr': np.float64(12.524199680812767), 'ClearCr': np.float64(12.279718567435713), 'NPkVill': np.float64(11.884201006921435), 'Blmngtn': np.float64(12.14777689419568), 'BrDale': np.float64(11.540679043361267), 'SWISU': np.float64(11.874302215307473), 'Blueste': np.float64(12.029983731526684)}
 EXTERIOR1ST_MAP = {'VinylSd': np.float64(12.189920420399533), 'MetalSd': np.float64(11.874175192515807), 'Wd Sdng': np.float64(11.835468282628185), 'HdBoard': np.float64(11.944799536084124), 'BrkFace': np.float64(12.218156276546033), 'WdShing': np.float64(11.702559919011081), 'CemntBd': np.float64(12.284045439327102), 'Plywood': np.float64(12.053988401909287), 'AsbShng': np.float64(11.672263645974672), 'Stucco': np.float64(12.089706611689746), 'BrkComm': np.float64(11.224442501841812), 'AsphShn': np.float64(12.029983731526684), 'Stone': np.float64(12.345838935721968), 'ImStucc': np.float64(12.476103599529843), 'CBlock': np.float64(11.561725152903833), 'None': 12.029983731526684}
