@@ -150,83 +150,85 @@ col_input, col_result = st.columns([1.2, 0.8], gap="large")
 with col_input:
     st.subheader("📋 ระบุคุณลักษณะของบ้าน")
     
-    with st.expander("1. พื้นที่และขนาด (Size & Area)", expanded=True):
+    with st.expander("1. พื้นที่หลักและขนาดที่ดิน (Main Area & Lot)", expanded=True):
         c1, c2, c3 = st.columns(3)
         with c1:
             gr_liv_area = st.number_input("พื้นที่ใช้สอยรวม (GrLivArea)", min_value=300, max_value=10000, value=1500, step=50)
-            lot_area = st.number_input("ขนาดที่ดิน (LotArea)", min_value=1000, max_value=50000, value=10000, step=100)
-            lot_frontage = st.number_input("ความกว้างหน้าที่ดิน (LotFrontage)", min_value=10, max_value=400, value=70, step=5)
-            lot_shape = st.selectbox("รูปทรงแปลงที่ดิน (Lot Shape)", options=list(shape_map.keys()), index=0)
-            selected_subclass = st.selectbox("ประเภทของบ้าน (MSSubClass)", options=list(MSSUBCLASS_MAP.keys()))
-        with c2:
             first_flr_sf = st.number_input("พื้นที่ชั้น 1 (1stFlrSF)", min_value=300, max_value=5000, value=1000, step=50)
             second_flr_sf = st.number_input("พื้นที่ชั้น 2 (2ndFlrSF)", min_value=0, max_value=5000, value=500, step=50)
-            total_bsmt_sf = st.number_input("พื้นที่ห้องใต้ดินรวม (TotalBsmtSF)", min_value=0, max_value=5000, value=1000, step=50)
+        with c2:
+            lot_area = st.number_input("ขนาดที่ดิน (LotArea)", min_value=1000, max_value=50000, value=10000, step=100)
+            lot_frontage = st.number_input("ความกว้างหน้าที่ดิน (LotFrontage)", min_value=10, max_value=400, value=70, step=5)
         with c3:
-            bsmt_fin_sf1 = st.number_input("พท.ใต้ดินส่วนตกแต่ง (BsmtFinSF1)", min_value=0, max_value=5000, value=500, step=50)
-            bsmt_unf_sf = st.number_input("พท.ใต้ดินไม่ได้ตกแต่ง (BsmtUnfSF)", min_value=0, max_value=5000, value=500, step=50)
-            garage_area = st.number_input("พื้นที่โรงจอดรถ (GarageArea)", min_value=0, max_value=2000, value=400, step=50)
+            lot_shape = st.selectbox("รูปทรงแปลงที่ดิน (Lot Shape)", options=list(shape_map.keys()), index=0)
+            selected_subclass = st.selectbox("ประเภทของบ้าน (MSSubClass)", options=list(MSSUBCLASS_MAP.keys()))
 
-    with st.expander("2. จำนวนห้องและฟังก์ชัน (Rooms & Amenities)", expanded=True):
-        c4, c5, c6 = st.columns(3)
+    with st.expander("2. ห้องและสิ่งอำนวยความสะดวก (Rooms & Amenities)", expanded=True):
+        c4, c5 = st.columns(2)
         with c4:
             bedroom = st.slider("ห้องนอน (BedroomAbvGr)", 0, 8, 3)
             tot_rms = st.slider("ห้องทั้งหมดไม่รวมห้องน้ำ", 2, 14, 6)
             kitchens = st.slider("จำนวนห้องครัว", 1, 3, 1)
-            full_bath = st.slider("ห้องน้ำเต็มรูปแบบ (FullBath)", 0, 4, 2)
         with c5:
-            garage_cars = st.slider("ความจุจอดรถ (คัน)", 0, 5, 2)
-            garage_type_th = st.selectbox("ประเภทโรงจอดรถ (Garage Type)", options=list(garage_type_map.keys()), index=0 if garage_cars > 0 else 5)
-            porch_area = st.number_input("พื้นที่ชานบ้าน/ระเบียงรวม", min_value=0, max_value=2000, value=0, step=20)
-            has_fireplace = st.checkbox("มีเตาผิง (Fireplace)")
-        with c6:
-            st.markdown("**เลือกประเภทระเบียง/คุณสมบัติพิเศษ**")
+            full_bath = st.slider("ห้องน้ำเต็มรูปแบบ (FullBath)", 0, 4, 2)
             half_bath = st.checkbox("มีห้องน้ำเล็ก (HalfBath)")
-            has_bsmt_full = st.checkbox("ห้องน้ำเต็มรูปแบบใต้ดิน")
-            has_bsmt_half = st.checkbox("ห้องน้ำเล็กใต้ดิน")
+            has_fireplace = st.checkbox("มีเตาผิง (Fireplace)")
+
+    with st.expander("3. ชั้นใต้ดิน (Basement)", expanded=True):
+        c6, c7, c8 = st.columns(3)
+        with c6:
+            bsmt_fin_sf1 = st.number_input("พท.ใต้ดินส่วนตกแต่ง (BsmtFinSF1)", min_value=0, max_value=5000, value=500, step=50)
+            bsmt_unf_sf = st.number_input("พท.ใต้ดินไม่ได้ตกแต่ง (BsmtUnfSF)", min_value=0, max_value=5000, value=500, step=50)
+            has_bsmt = (bsmt_fin_sf1 + bsmt_unf_sf) > 0
+        with c7:
+            has_bsmt_full = st.checkbox("ห้องน้ำเต็มรูปแบบใต้ดิน", disabled=not has_bsmt)
+            has_bsmt_half = st.checkbox("ห้องน้ำเล็กใต้ดิน", disabled=not has_bsmt)
+        with c8:
+            bsmt_qual = st.selectbox("คุณภาพโครงสร้างห้องใต้ดิน", list(qual_options.keys()), index=2, disabled=not has_bsmt)
+            bsmt_exposure_th = st.selectbox("การเปิดรับแสงของห้องใต้ดิน", options=list(bsmt_exposure_options.keys()), index=0, disabled=not has_bsmt)
+            bsmt_fin_type_th = st.selectbox("ระดับการตกแต่งห้องใต้ดิน", options=list(bsmt_fintype_options.keys()), index=0, disabled=not has_bsmt)
+
+    with st.expander("4. โรงจอดรถและภายนอก (Garage & Exterior)", expanded=True):
+        c9, c10, c11 = st.columns(3)
+        with c9:
+            garage_cars = st.slider("ความจุจอดรถ (คัน)", 0, 5, 2)
+            garage_area = st.number_input("พื้นที่โรงจอดรถ (GarageArea)", min_value=0, max_value=2000, value=400, step=50)
+            garage_type_th = st.selectbox("ประเภทโรงจอดรถ", options=list(garage_type_map.keys()), index=0 if garage_cars > 0 else 5)
+        with c10:
+            porch_area = st.number_input("พื้นที่ชานบ้าน/ระเบียงรวม", min_value=0, max_value=2000, value=0, step=20)
             has_open_porch = st.checkbox("มีระเบียงเปิดโล่ง")
             has_enclosed_porch = st.checkbox("มีระเบียงกระจก/ทึบ")
             has_screen_porch = st.checkbox("มีระเบียงมุ้งลวด")
+        with c11:
             has_3ssn_porch = st.checkbox("มีระเบียง 3 ฤดู")
             has_wood_deck = st.checkbox("มีระเบียงไม้ (WoodDeck)")
-            has_bsmt_fin2 = st.checkbox("ห้องใต้ดินตกแต่งโซน 2")
             has_pool = st.checkbox("มีสระว่ายน้ำ (PoolArea)")
-            has_misc = st.checkbox("มีสิ่งก่อสร้างอื่น (MiscVal)")
-            has_low_qual = st.checkbox("มีพท.คุณภาพต่ำ (LowQual)")
 
-    with st.expander("3. อายุบ้านและทำเล (Age & Location)", expanded=True):
-        c7, c8 = st.columns(2)
-        with c7:
-            house_age = st.number_input("อายุของบ้าน (ปี)", min_value=0, max_value=150, value=15)
-            is_remodeled = st.checkbox("เคยได้รับการรีโนเวท", value=True)
-            remod_age = st.number_input("อายุหลังจากการรีโนเวท (ปี)", min_value=0, max_value=150, value=10, disabled=not is_remodeled)
-            garage_yr_blt = st.number_input("ปีที่สร้างโรงรถ (GarageYrBlt)", min_value=1900, max_value=2024, value=2005)
-        with c8:
+    with st.expander("5. วัสดุ ทำเล และคุณภาพ (Materials, Location & Quality)", expanded=True):
+        c12, c13 = st.columns(2)
+        with c12:
             selected_neighborhood = st.selectbox("ย่านที่ตั้งของบ้าน (Neighborhood)", options=list(NEIGHBORHOOD_MAP.keys()))
             ms_zoning_th = st.selectbox(
                 "โซนผังเมือง (MSZoning)", 
                 ["ที่อยู่อาศัยหนาแน่นต่ำ (บ้านเดี่ยวทั่วไป)", "ที่อยู่อาศัยหนาแน่นปานกลาง (ทาวน์เฮาส์)", 
                  "โครงการหมู่บ้านจัดสรรริมน้ำ", "ที่อยู่อาศัยหนาแน่นสูง (คอนโด)"]
             )
-
-    with st.expander("4. เกรดและคุณภาพวัสดุ (Quality Ratings)", expanded=True):
-        c9, c10 = st.columns(2)
-        with c9:
-            overall_qual = st.slider("คุณภาพรวม (OverallQual)", 1, 10, 6)
-            overall_cond = st.slider("สภาพรวม (OverallCond)", 1, 10, 6)
+            house_age = st.number_input("อายุของบ้าน (ปี)", min_value=0, max_value=150, value=15)
+            is_remodeled = st.checkbox("เคยได้รับการรีโนเวท", value=True)
+            remod_age = st.number_input("อายุหลังจากการรีโนเวท (ปี)", min_value=0, max_value=150, value=10, disabled=not is_remodeled)
+            
             foundation_th = st.selectbox("ประเภทฐานราก (Foundation)", options=list(foundation_map.keys()), index=0)
             roof_style_th = st.selectbox("รูปทรงหลังคา (Roof Style)", options=list(roof_map.keys()), index=0)
-            selected_ext1 = st.selectbox("วัสดุภายนอก (Exterior 1st)", options=list(EXTERIOR1ST_MAP.keys()), index=15)
-            selected_ext2 = st.selectbox("วัสดุภายนอก (Exterior 2nd)", options=list(EXTERIOR2ND_MAP.keys()), index=15)
-            mas_vnr_th = st.selectbox("วัสดุตกแต่งผนังภายนอก", options=list(mas_vnr_map.keys()), index=0)
-        with c10:
+        with c13:
+            overall_qual = st.slider("คุณภาพรวม (OverallQual)", 1, 10, 6)
+            overall_cond = st.slider("สภาพรวม (OverallCond)", 1, 10, 6)
             exter_qual = st.selectbox("คุณภาพวัสดุ", list(qual_options.keys()), index=2)
             kitchen_qual = st.selectbox("คุณภาพห้องครัว", list(qual_options.keys()), index=2)
             heating_qc = st.selectbox("คุณภาพระบบทำความร้อน", list(qual_options.keys()), index=2)
-            has_bsmt = total_bsmt_sf > 0
-            bsmt_qual = st.selectbox("คุณภาพโครงสร้างห้องใต้ดิน", list(qual_options.keys()), index=2, disabled=not has_bsmt)
-            bsmt_exposure_th = st.selectbox("การเปิดรับแสงของห้องใต้ดิน", options=list(bsmt_exposure_options.keys()), index=0, disabled=not has_bsmt)
-            bsmt_fin_type_th = st.selectbox("ระดับการตกแต่งห้องใต้ดิน", options=list(bsmt_fintype_options.keys()), index=0, disabled=not has_bsmt)
+            
+            selected_ext1 = st.selectbox("วัสดุภายนอก 1", options=list(EXTERIOR1ST_MAP.keys()), index=15)
+            selected_ext2 = st.selectbox("วัสดุภายนอก 2", options=list(EXTERIOR2ND_MAP.keys()), index=15)
+            mas_vnr_th = st.selectbox("วัสดุตกแต่งผนังภายนอก", options=list(mas_vnr_map.keys()), index=0)
             
     btn_predict = st.button("🔮 คำนวณราคาประเมิน (Predict)", type="primary", use_container_width=True)
 
@@ -242,7 +244,7 @@ with col_result:
         if model is None:
             st.error("โมเดลไม่พร้อมใช้งาน กรุณาตรวจสอบไฟล์ .pkl")
         else:
-            # ใช้ฟีเจอร์จากตัวโมเดลเป็นหลัก ถ้าไม่มีให้ใช้ FEATURE_NAMES ที่กำหนดไว้ (87 ตัว)
+            # ใช้ฟีเจอร์จากตัวโมเดลเป็นหลัก
             if hasattr(model, "feature_names_in_"):
                 expected_features = list(model.feature_names_in_)
             else:
@@ -264,16 +266,20 @@ with col_result:
             selected_garage_code = garage_type_map[garage_type_th]
             selected_mas_vnr_code = mas_vnr_map[mas_vnr_th]
             
+            # คำนวณค่าต่างๆ อัตโนมัติตามที่ร้องขอ
+            calc_total_bsmt_sf = float(bsmt_fin_sf1 + bsmt_unf_sf)
+            calc_garage_yr_blt = 1.0 if garage_area > 0 else 0.0
+            
             value_map = {
                 'GrLivArea': float(gr_liv_area),
                 'LotArea': float(lot_area),
                 '1stFlrSF': float(first_flr_sf),
                 '2ndFlrSF': float(second_flr_sf),
-                'TotalBsmtSF': float(total_bsmt_sf),
+                'TotalBsmtSF': calc_total_bsmt_sf,
                 'BsmtFinSF1': float(bsmt_fin_sf1),
                 'BsmtUnfSF': float(bsmt_unf_sf),
                 'GarageArea': float(garage_area),
-                'GarageYrBlt': float(garage_yr_blt),
+                'GarageYrBlt': calc_garage_yr_blt,
                 'BedroomAbvGr': float(bedroom),
                 'TotRmsAbvGrd': float(tot_rms),
                 'FullBath': float(full_bath),
@@ -297,10 +303,12 @@ with col_result:
                 'EnclosedPorch_binary': 1.0 if has_enclosed_porch else 0.0,
                 '3SsnPorch_binary': 1.0 if has_3ssn_porch else 0.0,
                 'WoodDeckSF_binary': 1.0 if has_wood_deck else 0.0,
-                'BsmtFinSF2_binary': 1.0 if has_bsmt_fin2 else 0.0,
                 'PoolArea_binary': 1.0 if has_pool else 0.0,
-                'MiscVal_binary': 1.0 if has_misc else 0.0,
-                'LowQualFinSF_binary': 1.0 if has_low_qual else 0.0,
+                
+                # ค่าที่ถูกซ่อนจาก UI จะถูกส่งค่าเป็น 0.0 เพื่อให้โมเดลทำงานได้
+                'BsmtFinSF2_binary': 0.0,
+                'MiscVal_binary': 0.0,
+                'LowQualFinSF_binary': 0.0,
                 
                 'MSSubClass': MSSUBCLASS_MAP[selected_subclass],
                 'LotFrontage': float(lot_frontage),
@@ -318,11 +326,11 @@ with col_result:
                 'KitchenQual': qual_options[kitchen_qual],
                 'ExterQual': qual_options[exter_qual],
                 'HeatingQC': qual_options[heating_qc],
-                'BsmtQual': qual_options[bsmt_qual] if total_bsmt_sf > 0 else 0.0,
+                'BsmtQual': qual_options[bsmt_qual] if calc_total_bsmt_sf > 0 else 0.0,
                 'FireplaceQu': 3.0 if has_fireplace else 0.0,
                 'GarageFinish': 2.0 if garage_cars > 0 else 0.0,
-                'BsmtExposure': bsmt_exposure_options[bsmt_exposure_th] if total_bsmt_sf > 0 else 0.0,
-                'BsmtFinType1': bsmt_fintype_options[bsmt_fin_type_th] if total_bsmt_sf > 0 else 0.0,
+                'BsmtExposure': bsmt_exposure_options[bsmt_exposure_th] if calc_total_bsmt_sf > 0 else 0.0,
+                'BsmtFinType1': bsmt_fintype_options[bsmt_fin_type_th] if calc_total_bsmt_sf > 0 else 0.0,
             }
                 
             for feature, val in value_map.items():
